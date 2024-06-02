@@ -1,0 +1,309 @@
+{% extends '../base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    .checkmark {
+        width: 20px;
+        height: 20px;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        border: 2px solid #39B54A;
+        border-radius: 50%;
+        outline: none;
+        cursor: pointer;
+        position: relative;
+        transition: background-color 0.3s, transform 0.3s;
+    }
+
+    .checkmark:checked {
+        background-color: #39B54A;
+        transform: scale(1.2); /* Optional scale effect when checked */
+    }
+
+    .checkmark:checked::after {
+        content: '';
+        position: absolute;
+        left: 6px;
+        top: 2px;
+        width: 6px;
+        height: 10px;
+        border: solid #fff;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+
+    .confetti {
+        position: absolute;
+        width: 5px;
+        height: 10px;
+        background-color: #f2d74e;
+        border-radius: 2px;
+        opacity: 0;
+        animation: confetti-fall 1s ease-out forwards;
+    }
+
+    @keyframes confetti-fall {
+        0% {
+            opacity: 1;
+        }
+        100% {
+            transform: translate(var(--x), var(--y)) rotate(720deg);
+            opacity: 0;
+        }
+    }
+</style>
+
+
+<div class="container-fluid p-0">
+    <div class="card">
+        <div class="card-header text-center bg-primary text-white">
+            <h1 id="category-header">Category Name</h1>
+            <p style="color: white;" id="category-created-at"></p>
+            <input type="hidden" id="category-id" value="{{ pk }}">
+        </div>
+        <div class="card-body">
+            <div id="list-wrapper">
+                <!-- these are all the tasks -->
+            </div>
+            
+        </div>
+    </div>
+</div>
+<style>
+    .mb-5 {
+        margin-bottom: 4rem !important; /* This is equivalent to 80px */
+    }
+    #transparent-btn {
+        opacity: 0.7;
+    }
+    #sidebarRight, #sidebarRight2 {
+        width: 40% !important;
+    }
+</style>
+<button class="btn btn-secondary position-fixed bottom-0 end-0 mb-5 me-3" id="transparent-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight">
+    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="currentColor" class="bi bi-caret-left" viewBox="0 0 16 16">
+        <path d="M10 12.796V3.204L4.519 8 10 12.796zm-.659.753-5.48-4.796a1 1 0 0 1 0-1.506l5.48-4.796A1 1 0 0 1 11 3.204v9.592a1 1 0 0 1-1.659.753z"/>
+    </svg>
+</button>
+<!-- Sidebar Content Create Task -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarRight" aria-labelledby="sidebarLabel">
+    <div class="offcanvas-header">
+    <h5 id="sidebarLabel">Create Tasksss</h5>
+    <a type="butdton" class="text-reset" data-bs-dismiss="offcanvas" aria-label="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="currentColor" class="bi bi-caret-right" viewBox="0 0 16 16">
+            <path d="M6 12.796V3.204L11.481 8zm.659.753 5.48-4.796a1 1 0 0 0 0-1.506L6.66 2.451C6.011 1.885 5 2.345 5 3.204v9.592a1 1 0 0 0 1.659.753"/>
+        </svg>
+    </a>
+    </div>
+    <div class="offcanvas-body">
+        <div class="container-fluid full-height">
+            <form id="form-wrapper" class="mb-3">
+                <div class="input-group mb-3">
+                    <input id="title" type="text" class="form-control" name="title" placeholder="Title" required>
+                </div>
+                <div class="input-group mb-3">
+                    <input id="completion_date" type="date" class="form-control" name="completion_date" placeholder="Completion Date">
+                </div>
+                <div class="input-group mb-3">
+                    <input id="completion_time" type="time" class="form-control" name="completion_time" placeholder="Completion Time">
+                </div>
+                <div class="mb-3">
+                    <textarea id="description" class="form-control" name="description" placeholder="Description" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Task</button>
+            </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+function buildList(categoryId) {
+    var wrapper = document.getElementById('list-wrapper');
+    wrapper.innerHTML = '';
+    var categoryHeader = document.getElementById('category-header');
+    var categoryCreatedAt = document.getElementById('category-created-at');
+
+    var url = `http://127.0.0.1:7000/api/task-list/${categoryId}/`;
+
+    fetch(url)
+        .then((resp) => resp.json())
+        .then(function(data){
+            console.log('Data:', data);
+            if (wrapper) {
+                categoryHeader.innerHTML = data.category.name; 
+                let createdAt = new Date(data.category.created_at);
+                let formattedDate = createdAt.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                let formattedTime = createdAt.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                categoryCreatedAt.innerHTML = `Created at: ${formattedDate} ${formattedTime}`;
+
+                data.tasks.forEach(function(task) {
+                    let updatedAt = new Date(task.updated_at);
+                    let formattedUpdatedDate = updatedAt.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                    let formattedUpdatedTime = updatedAt.toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+
+                    var item = `
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <input type="checkbox" class="me-4 checkmark confetti-checkbox" id="confettiCheckbox${task.id}">
+
+                                <span class="me-2">${task.title}</span>
+                                <span class="ms-4">${task.completion_date}</span>
+                                <span class="ms-4">${task.completion_time}</span>
+                                <span class="ms-4">${formattedUpdatedDate} ${formattedUpdatedTime}</span>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-link" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="align-middle" data-feather="more-horizontal"></i>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <li><a class="dropdown-item" href="#">
+                                        <i class="align-middle me-2" data-feather="edit"></i> 
+                                        Edit</a>
+                                    </li>
+                                    <li><a class="dropdown-item" href="#">
+                                        <i class="align-middle me-2" data-feather="delete"></i>Delete</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                    `;
+                    wrapper.innerHTML += item;
+                });
+                feather.replace();
+
+                // Attach event listener for confetti effect to each checkbox
+                document.querySelectorAll('.confetti-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        if (this.checked) {
+                            for (let i = 0; i < 30; i++) {
+                                createConfettiParticle(this);
+                            }
+                        }
+                    });
+                });
+            }
+        })
+        .catch(function(error) {
+            console.log('Error:', error);
+    });
+}
+
+var form = document.getElementById('form-wrapper');
+form.addEventListener('submit', function(e){
+    e.preventDefault();
+    console.log('form submitted');
+    var url = 'http://127.0.0.1:7000/api/task-create/';
+    var title = document.getElementById('title').value;
+    var completion_date = document.getElementById('completion_date').value;
+    var completion_time = document.getElementById('completion_time').value;
+    var description = document.getElementById('description').value;
+    var category_id = document.getElementById('category-id').value;
+
+    var data = {
+        'title': title,
+        'completion_date': completion_date,
+        'completion_time': completion_time,
+        'description': description,
+        'category': category_id,
+    };
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json', 
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json()) // Change to .json() to parse JSON response
+    .then(function(responseData){
+        console.log('Response:', responseData);
+        buildList(category_id);
+    })
+    .catch(function(error) {
+        console.log('Error:', error);
+    });
+});
+
+// Ensure that buildList is called after the DOM is fully loaded with the correct category ID
+document.addEventListener('DOMContentLoaded', function() {
+    var categoryId = document.getElementById('category-id').value; // or another way to get the category ID
+    buildList(categoryId);
+});
+
+document.getElementById('confettiCheckbox').addEventListener('change', function() {
+    if (this.checked) {
+        for (let i = 0; i < 30; i++) {
+            createConfettiParticle(this);
+        }
+    }
+});
+
+function createConfettiParticle(button) {
+    const confetti = document.createElement('div');
+    confetti.classList.add('confetti');
+    document.body.appendChild(confetti);
+
+    const buttonRect = button.getBoundingClientRect();
+    const x = Math.random() * 400 - 200; // Spread particles within a 400px range horizontally
+    const y = Math.random() * 400 - 200; // Spread particles within a 400px range vertically
+
+    confetti.style.left = `${buttonRect.left + buttonRect.width / 2}px`;
+    confetti.style.top = `${buttonRect.top + buttonRect.height / 2}px`;
+    confetti.style.backgroundColor = getRandomColor();
+    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+    confetti.style.setProperty('--x', `${x}px`);
+    confetti.style.setProperty('--y', `${y}px`);
+    confetti.style.animationDuration = `${Math.random() * 1 + 0.5}s`;
+    
+    confetti.addEventListener('animationend', () => {
+        confetti.remove();
+    });
+}
+
+function getRandomColor() {
+    const colors = ['#f2d74e', '#f28c8c', '#4ef2a3', '#4e7af2', '#e74ef2'];
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+</script>
+
+{% endblock %}
