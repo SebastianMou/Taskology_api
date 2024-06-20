@@ -1,8 +1,12 @@
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from rest_framework import status
+from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
 
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+
 from rest_framework.response import Response
 from .serializer import TaskCategorySerializer, TaskSerializer, SubTaskSerializer
 
@@ -24,8 +28,10 @@ def apiOverview(request):
         'Task Create': '/task-create/',
         'Task Update': '/task-update/<str:pk>/',
         'Task Delete': '/task-delete/<str:pk>/',
+        'Task Delete All': '/delete-all-tasks-in-category/<int:category_id>/',
     }
     return Response(api_urls)
+
 
 ## TASK PROJECT CATEGORY C.R.U.D
 @api_view(['GET'])
@@ -92,7 +98,6 @@ def task_detail(request, pk):
     serializer = TaskSerializer(tasks, many=False)
     return Response(serializer.data)
 
-
 @api_view(['POST'])
 def task_create(request):
     data = request.data.copy()  # Make a mutable copy of request data
@@ -106,16 +111,54 @@ def task_create(request):
 
 @api_view(['POST'])
 def task_update(request, pk):
-    task = Task.objects.get(id=pk)
-    serializer = TaskSerializer(instance=task, data=request.data)
+    try:
+        task = Task.objects.get(id=pk)
+    except Task.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = TaskSerializer(instance=task, data=request.data, partial=True)  # Allow partial updates
     
     if serializer.is_valid():
         serializer.save()
-
-    return Response(serializer.data)
+        return Response(serializer.data)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['DELETE'])
 def task_delete(request, pk):
-    task = Task.objects.get(id=pk)
+    try:
+        task = Task.objects.get(id=pk)
+    except Task.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
     task.delete()
-    return Response('item succsefully deleed')
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['DELETE'])
+def delete_all_tasks_in_category(request, category_id):
+    tasks = Task.objects.filter(category_id=category_id)
+    if not tasks.exists():
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    tasks.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+## SEARCH BAR
+@api_view(['GET'])
+def search_tasks(request):
+    query = request.GET.get('q', None)
+    if query:
+        tasks = Task.objects.filter(title__icontains=query, owner=request.user)
+        serialized_tasks = TaskSerializer(tasks, many=True)
+        return Response(serialized_tasks.data)
+    return Response({"message": "No query provided."}, status=400)
+
+@api_view(['GET'])
+def search_categories(request):
+    query = request.GET.get('q', None)
+    if query:
+        categories = TaskCategory.objects.filter(name__icontains=query, owner=request.user)
+        serialized_categories = TaskCategorySerializer(categories, many=True)
+        return Response(serialized_categories.data)
+    return Response({"message": "No query provided."}, status=400)
+

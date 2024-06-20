@@ -50,6 +50,7 @@
 
 <body data-theme="default" data-layout="fluid" data-sidebar-position="left" data-sidebar-layout="default">
 	<div class="wrapper">
+
 		<nav id="sidebar" class="sidebar js-sidebar">
 			<div class="sidebar-content js-simplebar">
 				<a class="sidebar-brand" href="/">
@@ -76,7 +77,11 @@
 						</div>
 						<div class="flex-grow-1 ps-2">
 							<a class="sidebar-user-title dropdown-toggle" href="#" data-bs-toggle="dropdown">
-								Charles Hall
+								{% if user.is_authenticated %}
+									{{ user.username }}
+								{% else %}
+
+								{% endif %}
 							</a>
 							<div class="dropdown-menu dropdown-menu-start">
 								<a class="dropdown-item" href="pages-profile.html"><i class="align-middle me-1" data-feather="user"></i> Profile</a>
@@ -86,7 +91,7 @@
 									Privacy</a>
 								<a class="dropdown-item" href="#"><i class="align-middle me-1" data-feather="help-circle"></i> Help Center</a>
 								<div class="dropdown-divider"></div>
-								<a class="dropdown-item" href="#">Log out</a>
+								<a class="dropdown-item" href="{% url 'logout' %}">Log out</a>
 							</div>
 
 							<div class="sidebar-user-subtitle">Designer</div>
@@ -103,11 +108,7 @@
 							<i class="align-middle" data-feather="sliders"></i> <span class="align-middle">Dashboards</span>
 						</a>
 						<ul id="dashboards" class="sidebar-dropdown list-unstyled collapse show" data-bs-parent="#sidebar">
-							<li class="sidebar-item active"><a class="sidebar-link" href="index.html">Analytics</a></li>
-							<li class="sidebar-item"><a class="sidebar-link" href="dashboard-ecommerce.html">E-Commerce <span
-										class="sidebar-badge badge bg-primary">Pro</span></a></li>
-							<li class="sidebar-item"><a class="sidebar-link" href="dashboard-crypto.html">Crypto <span
-										class="sidebar-badge badge bg-primary">Pro</span></a></li>
+							<li class="sidebar-item active"><a class="sidebar-link" href="{% url 'password_change' %}">Change password</a></li>
 						</ul>
 					</li>
 
@@ -348,74 +349,89 @@
 				<a class="sidebar-toggle js-sidebar-toggle">
 					<i class="hamburger align-self-center"></i>
 				</a>
+				<style>
+					.position-absolute {
+						z-index: 100;
+						background-color: white;
+						width: 100%;
+						max-height: 200px;
+						overflow-y: auto;
+						border-radius: .25rem;
+					}
+				</style>
 
-				<form class="d-none d-sm-inline-block">
+				<form method="POST" class="d-none d-sm-inline-block position-relative" action="{% url 'search' %}">
+					{% csrf_token %}
 					<div class="input-group input-group-navbar">
-						<input type="text" class="form-control" placeholder="Search…" aria-label="Search">
+						<input name="searched" type="text" class="form-control" placeholder="Search…" aria-label="Search" id="searchQuery" onkeyup="searchItems()" value="{% if searched %}{{ searched }}{% endif %}">
 						<button class="btn" type="button">
 							<i class="align-middle" data-feather="search"></i>
 						</button>
 					</div>
+					<div id="autocompleteResults" class="list-group position-absolute"></div>
 				</form>
 
-				<ul class="navbar-nav d-none d-lg-flex">
-					<li class="nav-item px-2 dropdown">
-						<a class="nav-link dropdown-toggle" href="#" id="megaDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
-							aria-expanded="false">
-							Mega Menu
-						</a>
-						<div class="dropdown-menu dropdown-menu-start dropdown-mega" aria-labelledby="megaDropdown">
-							<div class="d-md-flex align-items-start justify-content-start">
-								<div class="dropdown-mega-list">
-									<div class="dropdown-header">UI Elements</div>
-									<a class="dropdown-item" href="#">Alerts</a>
-									<a class="dropdown-item" href="#">Buttons</a>
-									<a class="dropdown-item" href="#">Cards</a>
-									<a class="dropdown-item" href="#">Carousel</a>
-									<a class="dropdown-item" href="#">General</a>
-									<a class="dropdown-item" href="#">Grid</a>
-									<a class="dropdown-item" href="#">Modals</a>
-									<a class="dropdown-item" href="#">Tabs</a>
-									<a class="dropdown-item" href="#">Typography</a>
-								</div>
-								<div class="dropdown-mega-list">
-									<div class="dropdown-header">Forms</div>
-									<a class="dropdown-item" href="#">Layouts</a>
-									<a class="dropdown-item" href="#">Basic Inputs</a>
-									<a class="dropdown-item" href="#">Input Groups</a>
-									<a class="dropdown-item" href="#">Advanced Inputs</a>
-									<a class="dropdown-item" href="#">Editors</a>
-									<a class="dropdown-item" href="#">Validation</a>
-									<a class="dropdown-item" href="#">Wizard</a>
-								</div>
-								<div class="dropdown-mega-list">
-									<div class="dropdown-header">Tables</div>
-									<a class="dropdown-item" href="#">Basic Tables</a>
-									<a class="dropdown-item" href="#">Responsive Table</a>
-									<a class="dropdown-item" href="#">Table with Buttons</a>
-									<a class="dropdown-item" href="#">Column Search</a>
-									<a class="dropdown-item" href="#">Muulti Selection</a>
-									<a class="dropdown-item" href="#">Ajax Sourced Data</a>
-								</div>
-							</div>
-						</div>
-					</li>
+				<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+				<script>
+					 function searchItems() {
+						const query = document.getElementById('searchQuery').value;
+						if (query.length < 2) {
+							document.getElementById('autocompleteResults').innerHTML = '';
+							return;
+						}
 
-					<li class="nav-item dropdown">
-						<a class="nav-link dropdown-toggle" href="#" id="resourcesDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
-							aria-expanded="false">
-							Resources
-						</a>
-						<div class="dropdown-menu" aria-labelledby="resourcesDropdown">
-							<a class="dropdown-item" href="https://adminkit.io/" target="_blank"><i class="align-middle me-1" data-feather="home"></i>
-								Homepage</a>
-							<a class="dropdown-item" href="https://adminkit.io/docs/" target="_blank"><i class="align-middle me-1" data-feather="book-open"></i>
-								Documentation</a>
-							<a class="dropdown-item" href="https://adminkit.io/docs/getting-started/changelog/" target="_blank"><i class="align-middle me-1"
-									data-feather="edit"></i> Changelog</a>
-						</div>
-					</li>
-				</ul>
+						Promise.all([
+							fetch(`/api/tasks/search/?q=${query}`).then(response => response.json()),
+							fetch(`/api/categories/search/?q=${query}`).then(response => response.json())
+						])
+						.then(([taskData, categoryData]) => {
+							console.log('Task Data:', taskData);  // Debugging
+							console.log('Category Data:', categoryData);  // Debugging
+
+							const autocompleteResults = document.getElementById('autocompleteResults');
+							autocompleteResults.innerHTML = '';
+
+							if (categoryData.length > 0) {
+								const categoryHeader = document.createElement('div');
+								categoryHeader.className = 'list-group-item active';
+								categoryHeader.textContent = 'Categories';
+								autocompleteResults.appendChild(categoryHeader);
+
+								categoryData.forEach(category => {
+									const categoryItem = document.createElement('a');
+									categoryItem.href = `/task-list/${category.id}/`; // Link to category detail page
+									categoryItem.className = 'list-group-item list-group-item-action';
+									categoryItem.innerHTML = `<strong>${category.name}</strong><br><small>Created on: ${new Date(category.created_at).toLocaleDateString()}</small>`;
+									autocompleteResults.appendChild(categoryItem);
+								});
+							}
+
+							if (taskData.length > 0) {
+								const taskHeader = document.createElement('div');
+								taskHeader.className = 'list-group-item active';
+								taskHeader.textContent = 'Tasks';
+								autocompleteResults.appendChild(taskHeader);
+
+								taskData.forEach(task => {
+									const taskItem = document.createElement('a');
+									taskItem.href = `/task-list/${task.category_id}/`; // Link to task detail page
+									taskItem.className = 'list-group-item list-group-item-action';
+									taskItem.innerHTML = `<strong>${task.title}</strong> - <small>${task.category_name || 'No Category'}</small><br><small>Created on: ${new Date(task.created_at).toLocaleDateString()}</small>`;
+									autocompleteResults.appendChild(taskItem);
+								});
+							}
+						})
+						.catch(error => console.error('Error:', error));
+					}
+
+					// Add event listener for clicks outside the input and results box
+					document.addEventListener('click', function(event) {
+						const isClickInside = document.getElementById('searchQuery').contains(event.target) || document.getElementById('autocompleteResults').contains(event.target);
+						if (!isClickInside) {
+							document.getElementById('autocompleteResults').innerHTML = '';
+						}
+					});
+				</script>
 
 				<div class="navbar-collapse collapse">
 					<ul class="navbar-nav navbar-align">
@@ -484,96 +500,6 @@
 								</div>
 							</div>
 						</li>
-						<li class="nav-item dropdown">
-							<a class="nav-icon dropdown-toggle" href="#" id="messagesDropdown" data-bs-toggle="dropdown">
-								<div class="position-relative">
-									<i class="align-middle" data-feather="message-square"></i>
-								</div>
-							</a>
-							<div class="dropdown-menu dropdown-menu-lg dropdown-menu-end py-0" aria-labelledby="messagesDropdown">
-								<div class="dropdown-menu-header">
-									<div class="position-relative">
-										4 New Messages
-									</div>
-								</div>
-								<div class="list-group">
-									<a href="#" class="list-group-item">
-										<div class="row g-0 align-items-center">
-											<div class="col-2">
-												<img src="{% static 'img/avatars/avatar-5.jpg' %}" class="avatar img-fluid rounded-circle" alt="Vanessa Tucker">
-											</div>
-											<div class="col-10 ps-2">
-												<div class="text-dark">Vanessa Tucker</div>
-												<div class="text-muted small mt-1">Nam pretium turpis et arcu. Duis arcu tortor.</div>
-												<div class="text-muted small mt-1">15m ago</div>
-											</div>
-										</div>
-									</a>
-									<a href="#" class="list-group-item">
-										<div class="row g-0 align-items-center">
-											<div class="col-2">
-												<img src="{% static 'img/avatars/avatar-2.jpg' %}" class="avatar img-fluid rounded-circle" alt="William Harris">
-											</div>
-											<div class="col-10 ps-2">
-												<div class="text-dark">William Harris</div>
-												<div class="text-muted small mt-1">Curabitur ligula sapien euismod vitae.</div>
-												<div class="text-muted small mt-1">2h ago</div>
-											</div>
-										</div>
-									</a>
-									<a href="#" class="list-group-item">
-										<div class="row g-0 align-items-center">
-											<div class="col-2">
-												<img src="{% static 'img/avatars/avatar-4.jpg' %}" class="avatar img-fluid rounded-circle" alt="Christina Mason">
-											</div>
-											<div class="col-10 ps-2">
-												<div class="text-dark">Christina Mason</div>
-												<div class="text-muted small mt-1">Pellentesque auctor neque nec urna.</div>
-												<div class="text-muted small mt-1">4h ago</div>
-											</div>
-										</div>
-									</a>
-									<a href="#" class="list-group-item">
-										<div class="row g-0 align-items-center">
-											<div class="col-2">
-												<img src="{% static 'img/avatars/avatar-3.jpg' %}" class="avatar img-fluid rounded-circle" alt="Sharon Lessman">
-											</div>
-											<div class="col-10 ps-2">
-												<div class="text-dark">Sharon Lessman</div>
-												<div class="text-muted small mt-1">Aenean tellus metus, bibendum sed, posuere ac, mattis non.</div>
-												<div class="text-muted small mt-1">5h ago</div>
-											</div>
-										</div>
-									</a>
-								</div>
-								<div class="dropdown-menu-footer">
-									<a href="#" class="text-muted">Show all messages</a>
-								</div>
-							</div>
-						</li>
-						<li class="nav-item dropdown">
-							<a class="nav-flag dropdown-toggle" href="#" id="languageDropdown" data-bs-toggle="dropdown">
-								<img src="{% static 'img/flags/us.png' %}" alt="English" />
-							</a>
-							<div class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
-								<a class="dropdown-item" href="#">
-									<img src="{% static 'img/flags/us.png' %}" alt="English" width="20" class="align-middle me-1" />
-									<span class="align-middle">English</span>
-								</a>
-								<a class="dropdown-item" href="#">
-									<img src="{% static 'img/flags/es.png' %}" alt="Spanish" width="20" class="align-middle me-1" />
-									<span class="align-middle">Spanish</span>
-								</a>
-								<a class="dropdown-item" href="#">
-									<img src="{% static 'img/flags/ru.png' %}" alt="Russian" width="20" class="align-middle me-1" />
-									<span class="align-middle">Russian</span>
-								</a>
-								<a class="dropdown-item" href="#">
-									<img src="{% static 'img/flags/de.png' %}" alt="German" width="20" class="align-middle me-1" />
-									<span class="align-middle">German</span>
-								</a>
-							</div>
-						</li>
 						<li class="nav-item">
 							<a class="nav-icon js-fullscreen d-none d-lg-block" href="#">
 								<div class="position-relative">
@@ -593,13 +519,12 @@
 									Privacy</a>
 								<a class="dropdown-item" href="#"><i class="align-middle me-1" data-feather="help-circle"></i> Help Center</a>
 								<div class="dropdown-divider"></div>
-								<a class="dropdown-item" href="#">Log out</a>
+								<a class="dropdown-item" href="{% url 'logout' %}">Log out</a>
 							</div>
 						</li>
 					</ul>
 				</div>
 			</nav>
-
 			<main class="content">
 				{% block content %}
                 {% endblock %}

@@ -209,11 +209,13 @@
         });
     }
 
+    // task project create
     var form = document.getElementById('form-wrapper')
     form.addEventListener('submit', function(e){
         e.preventDefault()
         console.log('form submited')
         var url = 'http://127.0.0.1:7000/api/task-project-create/';
+        
         if (activeItem != null) {
             var url = `http://127.0.0.1:7000/api/task-project-update/${activeItem.id}/`;
             activeItem = null

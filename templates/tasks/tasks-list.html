@@ -2,6 +2,36 @@
 {% load static %}
 
 {% block content %}
+<audio id="pop-sound" src="{% static 'sound affect/happy-pop-2-185287.mp3' %}"></audio>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.1.2/tinymce.min.js" referrerpolicy="origin"></script>
+<style>
+    /* Ensure TinyMCE is usable */
+    textarea#description {
+        z-index: 1;
+        position: relative;
+    }
+</style>
+<script>
+    tinymce.init({
+        selector: 'textarea#description',
+        plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak',
+        toolbar_mode: 'floating',
+        skin: 'oxide-dark',  // Use the dark skin provided by TinyMCE
+        content_css: 'dark',  // Use the dark content CSS provided by TinyMCE
+        content_style: `
+            body {
+                background-color: #222F3E;
+                color: #ffffff;
+                border: none; 
+            }
+            .mce-content-body {
+                background-color: #222F3E !important;
+                color: #ffffff !important;
+                border: none !important; 
+            }
+        `
+    });
+</script>
 <style>
     .checkmark {
         width: 20px;
@@ -19,7 +49,7 @@
 
     .checkmark:checked {
         background-color: #39B54A;
-        transform: scale(1.2); /* Optional scale effect when checked */
+        transform: scale(1.2);
     }
 
     .checkmark:checked::after {
@@ -53,22 +83,59 @@
             opacity: 0;
         }
     }
-</style>
 
+    .top_add_button {
+        width: 45px; 
+        font-size: smaller;
+        border-radius: 0px;
+    }
+
+    .bottom_add_button {
+        width: 101px;
+        font-size: smaller; 
+        margin-top: 9px; 
+        border-radius: 0px;
+    }
+
+    /* Media query for mobile devices */
+    @media (max-width: 768px) {
+        .mobile-hide {
+            display: none;
+        }
+
+    }
+
+    #title, #completion_date, #completion_time {
+        border: none;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.281);
+        border-radius: 0;
+    }
+</style>
 
 <div class="container-fluid p-0">
     <div class="card">
         <div class="card-header text-center bg-primary text-white">
             <h1 id="category-header">Category Name</h1>
+
             <p style="color: white;" id="category-created-at"></p>
             <input type="hidden" id="category-id" value="{{ pk }}">
         </div>
+        
+        <div class="d-flex">
+            <script>
+                var categoryId = {{ pk }};
+            </script>
+            <button class="btn btn-danger" style="border-radius: 0px;" onclick="deleteAllTasksInCategory(categoryId)"><i class="align-middle me-2" data-feather="trash"></i></button>
+            <button class="btn btn-primary top_add_button ms-auto" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight"><i style="color: #fff;" data-feather="plus"></i></button>
+        </div>
+        
         <div class="card-body">
             <div id="list-wrapper">
                 <!-- these are all the tasks -->
             </div>
-            
+            <button class="btn btn-primary bottom_add_button" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight"><i data-feather="plus"></i> New Task</button>
         </div>
+        
     </div>
 </div>
 <style>
@@ -78,15 +145,17 @@
     #transparent-btn {
         opacity: 0.7;
     }
-    #sidebarRight, #sidebarRight2 {
-        width: 40% !important;
+    #sidebarRight, #sidebarRight2, #sidebarRight1 {
+        width: 50% !important;
+    }
+    /* Media query for mobile devices */
+    @media (max-width: 768px) {
+        #sidebarRight, #sidebarRight2, #sidebarRight1 {
+            width: 90% !important;
+        }
+        
     }
 </style>
-<button class="btn btn-secondary position-fixed bottom-0 end-0 mb-5 me-3" id="transparent-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight">
-    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" fill="currentColor" class="bi bi-caret-left" viewBox="0 0 16 16">
-        <path d="M10 12.796V3.204L4.519 8 10 12.796zm-.659.753-5.48-4.796a1 1 0 0 1 0-1.506l5.48-4.796A1 1 0 0 1 11 3.204v9.592a1 1 0 0 1-1.659.753z"/>
-    </svg>
-</button>
 <!-- Sidebar Content Create Task -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarRight" aria-labelledby="sidebarLabel">
     <div class="offcanvas-header">
@@ -100,6 +169,7 @@
     <div class="offcanvas-body">
         <div class="container-fluid full-height">
             <form id="form-wrapper" class="mb-3">
+                <input type="hidden" id="user-id" value="{{ user.id }}">
                 <div class="input-group mb-3">
                     <input id="title" type="text" class="form-control" name="title" placeholder="Title" required>
                 </div>
@@ -114,7 +184,23 @@
                 </div>
                 <button type="submit" class="btn btn-primary">Add Task</button>
             </form>
-            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sidebar Content task detail -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarRight1" aria-labelledby="sidebarLabel">
+    <div class="offcanvas-header">
+        <h5 id="sidebarLabel"><i class="align-middle me-2" data-feather="book-open"></i> Read</h5>
+        <a type="button" class="text-reset" data-bs-dismiss="offcanvas" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="currentColor" class="bi bi-caret-right" viewBox="0 0 16 16">
+                <path d="M6 12.796V3.204L11.481 8zm.659.753 5.48-4.796a1 1 0 0 0 0-1.506L6.66 2.451C6.011 1.885 5 2.345 5 3.204v9.592a1 1 0 0 0 1.659.753"/>
+            </svg>
+        </a>
+    </div>
+    <div class="offcanvas-body">
+        <div class="container-fluid full-height" id="task-detail-container">
+            <!-- load task detail here -->
         </div>
     </div>
 </div>
@@ -138,11 +224,14 @@ function getCookie(name) {
 
 const csrftoken = getCookie('csrftoken');
 
+var activateItem = null;
+
 function buildList(categoryId) {
     var wrapper = document.getElementById('list-wrapper');
-    wrapper.innerHTML = '';
+
     var categoryHeader = document.getElementById('category-header');
     var categoryCreatedAt = document.getElementById('category-created-at');
+
 
     var url = `http://127.0.0.1:7000/api/task-list/${categoryId}/`;
 
@@ -151,7 +240,7 @@ function buildList(categoryId) {
         .then(function(data){
             console.log('Data:', data);
             if (wrapper) {
-                categoryHeader.innerHTML = data.category.name; 
+                categoryHeader.innerHTML = data.category.name;
                 let createdAt = new Date(data.category.created_at);
                 let formattedDate = createdAt.toLocaleDateString('en-US', {
                     year: 'numeric',
@@ -178,90 +267,348 @@ function buildList(categoryId) {
                         second: '2-digit'
                     });
 
-                    var item = `
-                    <ul class="list-group">
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center">
-                                <input type="checkbox" class="me-4 checkmark confetti-checkbox" id="confettiCheckbox${task.id}">
+                    var checked = task.completed ? 'checked' : '';
 
-                                <span class="me-2">${task.title}</span>
-                                <span class="ms-4">${task.completion_date}</span>
-                                <span class="ms-4">${task.completion_time}</span>
-                                <span class="ms-4">${formattedUpdatedDate} ${formattedUpdatedTime}</span>
-                            </div>
-                            <div class="dropdown">
-                                <button class="btn btn-link" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="align-middle" data-feather="more-horizontal"></i>
-                                </button>
-                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                    <li><a class="dropdown-item" href="#">
-                                        <i class="align-middle me-2" data-feather="edit"></i> 
-                                        Edit</a>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#">
-                                        <i class="align-middle me-2" data-feather="delete"></i>Delete</a></li>
-                                </ul>
-                            </div>
-                        </li>
-                    </ul>
+                    // Remove existing item if it exists
+                    var existingItem = document.getElementById(`data-row-${task.id}`);
+                    if (existingItem) {
+                        existingItem.parentNode.removeChild(existingItem);
+                    }
+
+                    var item = `
+                        <ul class="list-group" id="data-row-${task.id}">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <input type="checkbox" class="me-4 checkmark confetti-checkbox" id="confettiCheckbox${task.id}" ${checked}>
+                                    <span class="me-2 edit" data-task-id="${task.id}" data-task-title="${task.title}" data-task-completion-date="${task.completion_date}" data-task-completion-time="${task.completion_time}" data-task-description="${task.description}" data-task-completed="${task.completed}" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight">${task.title}</span>
+                                    <span class="ms-4 mobile-hide">${task.completion_date}</span>
+                                    <span class="ms-4 mobile-hide">${task.completion_time}</span>
+                                    <span class="ms-4 mobile-hide">${formattedUpdatedDate} ${formattedUpdatedTime}</span>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-link" type="button" id="dropdownMenuButton${task.id}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="align-middle" data-feather="more-horizontal"></i>
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton${task.id}">
+                                        <li>
+                                            <button class="dropdown-item edit" data-task-id="${task.id}" data-task-title="${task.title}" data-task-completion-date="${task.completion_date}" data-task-completion-time="${task.completion_time}" data-task-description="${task.description}" data-task-completed="${task.completed}" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight">
+                                                <i class="align-middle me-2" data-feather="edit"></i> Edit
+                                            </button>
+                                        </li>
+
+                                        <li>
+                                            <button class="dropdown-item delete" data-task-id="${task.id}">
+                                                <i class="align-middle me-2" data-feather="delete"></i> Delete
+                                            </button>
+                                        </li>
+
+                                        <li>
+                                            <button class="dropdown-item task-title" data-task-id="${task.id}" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight1" aria-controls="sidebarRight1">
+                                                <i class="align-middle me-2" data-feather="book-open"></i> Read
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </li>
+                        </ul>
                     `;
                     wrapper.innerHTML += item;
                 });
-                feather.replace();
 
-                // Attach event listener for confetti effect to each checkbox
-                document.querySelectorAll('.confetti-checkbox').forEach(checkbox => {
+                // Attach event listeners to task titles
+                document.querySelectorAll('.task-title').forEach(function(taskTitle) {
+                    taskTitle.addEventListener('click', function() {
+                        var taskId = this.getAttribute('data-task-id');
+                        displayTaskDetail(taskId);
+                    });
+                });
+
+                // Attach event listeners to edit buttons
+                document.querySelectorAll('.edit').forEach(function(editBtn) {
+                    editBtn.addEventListener('click', function() {
+                        var taskId = this.getAttribute('data-task-id');
+                        var taskTitle = this.getAttribute('data-task-title');
+                        var taskCompletionDate = this.getAttribute('data-task-completion-date');
+                        var taskCompletionTime = this.getAttribute('data-task-completion-time');
+                        var taskDescription = this.getAttribute('data-task-description');
+                        var taskCompleted = this.getAttribute('data-task-completed') === 'true';
+
+                        editItem(taskId, taskTitle, taskCompletionDate, taskCompletionTime, taskDescription, taskCompleted);
+                    });
+                });
+
+                // Attach event listeners to delete buttons
+                document.querySelectorAll('.delete').forEach(function(deleteBtn) {
+                    deleteBtn.addEventListener('click', function() {
+                        var taskId = this.getAttribute('data-task-id');
+                        deleteItem(taskId);
+                    });
+                });
+
+                // Attach event listeners to checkboxes for updating completion status
+                document.querySelectorAll('.confetti-checkbox').forEach(function(checkbox) {
                     checkbox.addEventListener('change', function() {
+                        console.log('Checkbox changed:', this);
+                        var taskId = this.id.replace('confettiCheckbox', '');
+                        var completed = this.checked;
+                        updateTaskCompletionStatus(taskId, completed);
+
                         if (this.checked) {
+                            console.log('Checkbox is checked, playing sound...');
+                            playPopSound();
                             for (let i = 0; i < 30; i++) {
                                 createConfettiParticle(this);
                             }
                         }
                     });
                 });
+
+                feather.replace();
             }
         })
         .catch(function(error) {
             console.log('Error:', error);
-    });
+        });
 }
 
-var form = document.getElementById('form-wrapper');
-form.addEventListener('submit', function(e){
-    e.preventDefault();
-    console.log('form submitted');
-    var url = 'http://127.0.0.1:7000/api/task-create/';
-    var title = document.getElementById('title').value;
-    var completion_date = document.getElementById('completion_date').value;
-    var completion_time = document.getElementById('completion_time').value;
-    var description = document.getElementById('description').value;
-    var category_id = document.getElementById('category-id').value;
+function playPopSound() {
+    var audio = document.getElementById('pop-sound');
+    console.log('Audio element:', audio);
+    if (audio) {
+        audio.play().catch(function(error) {
+            console.log('Audio play error:', error);
+        });
+    }
+}
 
+// display task detail  
+function displayTaskDetail(taskId) {
+    var url = `http://127.0.0.1:7000/api/task-detail/${taskId}/`;
+
+    fetch(url)
+        .then((resp) => resp.json())
+        .then(function(data){
+            var taskDetailContainer = document.getElementById('task-detail-container');
+            if (taskDetailContainer) {
+                taskDetailContainer.innerHTML = `
+                    <h2><b>${data.title}</b></h2>
+                    <p>Created: ${data.created_at}</p>
+                    <p>
+                        <svg style="margin-right: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-event" viewBox="0 0 16 16">
+                            <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z"/>
+                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
+                        </svg> ${data.completion_date}
+                    </p>
+                    <p>
+                        <svg style="margin-right: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clock-history" viewBox="0 0 16 16">
+                            <path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022zm2.004.45a7 7 0 0 0-.985-.299l.219-.976q.576.129 1.126.342zm1.37.71a7 7 0 0 0-.439-.27l.493-.87a8 8 0 0 1 .979.654l-.615.789a7 7 0 0 0-.418-.302zm1.834 1.79a7 7 0 0 0-.653-.796l.724-.69q.406.429.747.91zm.744 1.352a7 7 0 0 0-.214-.468l.893-.45a8 8 0 0 1 .45 1.088l-.95.313a7 7 0 0 0-.179-.483m.53 2.507a7 7 0 0 0-.1-1.025l.985-.17q.1.58.116 1.17zm-.131 1.538q.05-.254.081-.51l.993.123a8 8 0 0 1-.23 1.155l-.964-.267q.069-.247.12-.501m-.952 2.379q.276-.436.486-.908l.914.405q-.24.54-.555 1.038zm-.964 1.205q.183-.183.35-.378l.758.653a8 8 0 0 1-.401.432z"/>
+                            <path d="M8 1a7 7 0 1 0 4.95 11.95l.707.707A8.001 8.001 0 1 1 8 0z"/>
+                            <path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5"/>
+                        </svg> ${data.completion_time}
+                    </p>
+                    <p>
+                        <svg style="margin-right: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-up-square" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm8.5 9.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707z"/>
+                        </svg> ${new Date(data.updated_at).toLocaleString()}
+                    </p>
+                    <p>Completed: ${data.completed ? '<svg style="color: green; width: 12px; height: 12px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-dot" viewBox="0 0 16 16"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3"/></svg>' : '<svg style="color: red;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-dot" viewBox="0 0 16 16"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3"/></svg>'}</p>
+                    <p>${data.description}</p>
+
+                `;
+                feather.replace();
+            }
+        })
+        .catch(function(error) {
+            console.log('Error:', error);
+        });
+}
+
+// Function to update task completion status
+function updateTaskCompletionStatus(taskId, completed) {
+    var url = `http://127.0.0.1:7000/api/task-update/${taskId}/`;
     var data = {
-        'title': title,
-        'completion_date': completion_date,
-        'completion_time': completion_time,
-        'description': description,
-        'category': category_id,
+        'completed': completed
     };
 
     fetch(url, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json', 
+            'Content-Type': 'application/json',
             'X-CSRFToken': csrftoken,
         },
         body: JSON.stringify(data)
     })
-    .then(response => response.json()) // Change to .json() to parse JSON response
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(function(responseData){
+        console.log('Task updated:', responseData);
+    })
+    .catch(function(error) {
+        console.log('Error updating task:', error);
+    });
+}
+
+// Create a task
+var form = document.getElementById('form-wrapper');
+form.addEventListener('submit', function(e){
+    e.preventDefault();
+    console.log('form submitted');
+
+    var url = 'http://127.0.0.1:7000/api/task-create/';
+    var method = 'POST';
+
+    var title = document.getElementById('title').value;
+    var completion_date = document.getElementById('completion_date').value;
+    var completion_time = document.getElementById('completion_time').value;
+    var description = tinymce.get('description').getContent(); // Get TinyMCE content
+    var category_id = document.getElementById('category-id').value;
+    var owner_id = document.getElementById('user-id').value;
+
+    var data = {
+        'title': title,
+        'category': category_id,
+        'owner': owner_id,
+        'description': description // Include TinyMCE content
+    };
+
+    if (completion_date) {
+        data['completion_date'] = completion_date;
+    }
+
+    if (completion_time) {
+        data['completion_time'] = completion_time;
+    }
+
+    if (activateItem != null) {
+        url = `http://127.0.0.1:7000/api/task-update/${activateItem.id}/`;
+        method = 'POST'; // Use POST if your server expects POST for update
+        data.id = activateItem.id; // Include task ID for the update
+    }
+
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => {throw err});
+        }
+        return response.json();
+    })
     .then(function(responseData){
         console.log('Response:', responseData);
         buildList(category_id);
+        if (activateItem == null) { // Only reset the form if a new task was created
+            form.reset();
+            tinymce.get('description').setContent(''); // Reset TinyMCE content
+        }
+        activateItem = null; // Reset activateItem after update
     })
     .catch(function(error) {
         console.log('Error:', error);
     });
 });
+
+
+// Edit tasks
+function editItem(taskId, taskTitle, taskCompletionDate, taskCompletionTime, taskDescription) {
+    console.log('Item clicked:', taskId, 'Title:', taskTitle, 'Completion Date:', taskCompletionDate, 'Completion Time:', taskCompletionTime, 'Description:', taskDescription);
+    activateItem = { 
+        id: taskId, 
+        title: taskTitle, 
+        completionDate: taskCompletionDate,  
+        CompletionTime: taskCompletionTime,
+        Description: taskDescription,
+    };
+    document.getElementById('title').value = taskTitle;
+    document.getElementById('completion_date').value = taskCompletionDate;
+    document.getElementById('completion_time').value = taskCompletionTime;
+    tinymce.get('description').setContent(taskDescription);
+}
+
+// Delete tasks
+function deleteItem(taskId) {
+    console.log('Delete clicked for task:', taskId);
+    var url = `http://127.0.0.1:7000/api/task-delete/${taskId}/`;
+
+    fetch(url, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.text(); // Or response.json() if your API returns JSON
+    })
+    .then(function(responseData){
+        console.log('Response:', responseData);
+        
+        // Remove the task element from the DOM directly
+        var taskElement = document.getElementById(`data-row-${taskId}`);
+        if (taskElement) {
+            taskElement.parentNode.removeChild(taskElement);
+        }
+
+        // Optionally, rebuild the list to ensure consistency
+        buildList(document.getElementById('category-id').value); // Rebuild the list after deletion
+    })
+    .catch(function(error) {
+        console.log('Error:', error);
+    });
+}
+
+function deleteAllTasksInCategory(categoryId) {
+    console.log('Delete all tasks clicked for category:', categoryId);
+    var url = `http://127.0.0.1:7000/api/delete-all-tasks-in-category/${categoryId}/`;
+
+    fetch(url, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.text(); // Or response.json() if your API returns JSON
+    })
+    .then(function(responseData){
+        console.log('Response:', responseData);
+        
+        // Remove all task elements from the DOM
+        var taskElements = document.querySelectorAll('[id^="data-row-"]');
+        taskElements.forEach(function(taskElement) {
+            taskElement.parentNode.removeChild(taskElement);
+        });
+
+        // Optionally, clear the category header or other elements
+        var categoryHeader = document.getElementById('category-header');
+        var categoryCreatedAt = document.getElementById('category-created-at');
+        if (categoryHeader) categoryHeader.innerHTML = '';
+        if (categoryCreatedAt) categoryCreatedAt.innerHTML = '';
+        
+        // Optionally, show a message that all tasks have been deleted
+        var wrapper = document.getElementById('list-wrapper');
+        if (wrapper) wrapper.innerHTML = '<p>All tasks have been deleted.</p>';
+    })
+    .catch(function(error) {
+        console.log('Error:', error);
+    });
+}
 
 // Ensure that buildList is called after the DOM is fully loaded with the correct category ID
 document.addEventListener('DOMContentLoaded', function() {
@@ -269,8 +616,31 @@ document.addEventListener('DOMContentLoaded', function() {
     buildList(categoryId);
 });
 
+// makeing the text boxes be empty
+document.addEventListener("DOMContentLoaded", function() {
+    const addButton = document.querySelector('.btn.btn-primary.top_add_button.ms-auto');
+    const addSecButton = document.querySelector('.btn.btn-primary.bottom_add_button');
+
+    function prepareForNewTask() {
+        activateItem = null;  // Set activateItem to null to indicate a new task is being created
+        clearFormInputs();
+    }
+
+    function clearFormInputs() {
+        document.getElementById('title').value = '';
+        document.getElementById('completion_date').value = '';
+        document.getElementById('completion_time').value = '';
+        tinymce.get('description').setContent(''); // Clear TinyMCE content
+    }
+
+    addButton && addButton.addEventListener('click', prepareForNewTask);
+    addSecButton && addSecButton.addEventListener('click', prepareForNewTask);
+});
+
+
 document.getElementById('confettiCheckbox').addEventListener('change', function() {
     if (this.checked) {
+        playPopSound();
         for (let i = 0; i < 30; i++) {
             createConfettiParticle(this);
         }
@@ -286,8 +656,8 @@ function createConfettiParticle(button) {
     const x = Math.random() * 400 - 200; // Spread particles within a 400px range horizontally
     const y = Math.random() * 400 - 200; // Spread particles within a 400px range vertically
 
-    confetti.style.left = `${buttonRect.left + buttonRect.width / 2}px`;
-    confetti.style.top = `${buttonRect.top + buttonRect.height / 2}px`;
+    confetti.style.left = `${buttonRect.left + buttonRect.width / 2 + scrollX}px`;
+    confetti.style.top = `${buttonRect.top + buttonRect.height / 2 + scrollY}px`;
     confetti.style.backgroundColor = getRandomColor();
     confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
     confetti.style.setProperty('--x', `${x}px`);
