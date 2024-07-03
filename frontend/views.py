@@ -11,7 +11,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMessage
 from django.core.paginator import Paginator
 
-from .forms import RegisterForm
+from .forms import RegisterForm, ProfileForm
 from api.models import TaskCategory, Task, Profile
 
 # Create your views here.
@@ -39,7 +39,7 @@ def signup(request):
                 profile.phone_number = form.cleaned_data.get('phone_number')
                 profile.save()
                 activateEmail(request, user, email)
-                return redirect('/')  # Redirect to the home page or any other page
+                return redirect('/')
     else:
         form = RegisterForm()
     
@@ -48,25 +48,28 @@ def signup(request):
     }
     return render(request, 'authentication/signup.html', context)
 
-
-
 def activate(request, uidb64, token):
     User = get_user_model()
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = User.objects.get(pk=uid)
-    except(TypeError, ValueError, OverflowError, User.DoesNotExist):
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         user = None
 
     if user is not None and account_activation_token.check_token(user, token):
         user.is_active = True
         user.save()
 
+        # Log the user in
+        login(request, user)
+        request.session['interests'] = True
+
         messages.success(request, 'Thank you for confirming your email. You can now log in to your account.')
-        return redirect('login')
+        return redirect('interests')
     else:
         messages.error(request, 'The activation link is not valid!')
     return render(request, 'index.html')
+
 
 def activateEmail(request, user, to_email):
     mail_subject = 'Activate your user account.'
@@ -97,13 +100,15 @@ def user_login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect('/')
+            if request.session.get('interests', False):
+                return redirect('interests')
+            else:
+                return redirect('/')
         else:
-            messages.error(request, 'incorrect password or username')
+            messages.error(request, 'Incorrect password or username')
             return redirect('login')
-    else:
-        pass
     return render(request, 'authentication/login.html')
+
 
 def email_login(request):
     if request.method == 'POST':
@@ -128,9 +133,30 @@ def email_login(request):
 
     return render(request, 'authentication/email_login.html')
 
+@login_required
+def interests(request):
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, instance=request.user.profile)
+        if form.is_valid():
+            form.save()
+            # Reset the session variable
+            request.session['interests'] = False
+            return redirect('pages')  # Redirect to a success page
+    else:
+        form = ProfileForm(instance=request.user.profile)
+    
+    return render(request, 'authentication/interests.html', {'form': form})
+
+
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+def delete_account(request):
+    if request.method == 'POST':
+        deleteUser = User.objects.get(username=request.user)
+        deleteUser.delete()
+        return redirect('/')
 
 def task_list(request, pk):
     # category = TaskCategory.objects.get(id=pk, owner=request.user)
@@ -149,7 +175,14 @@ def task_list_detail(request):
     return render(request, 'tasks/task_list_detail.html')
 
 def pages(request):
-    return render(request, 'password-control/pages.html')
+    user_profile = Profile.objects.get(user=request.user)
+    user_interests = user_profile.interests.all()
+    
+    context = {
+        'user_interests': user_interests
+    }
+
+    return render(request, 'password-control/pages.html', context)
 
 def search(request):
     searched = request.POST.get('searched') or request.GET.get('searched')
@@ -172,3 +205,4 @@ def search(request):
         'category_page_obj': category_page_obj,
     }
     return render(request, 'tasks/search.html', context)
+

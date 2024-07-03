@@ -3,13 +3,20 @@ from django.contrib.auth.models import User
 from tinymce.models import HTMLField
 
 # Create your models here.
+class Interest(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+    
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone_number = models.CharField(max_length=15, blank=True)
+    interests = models.ManyToManyField(Interest, blank=True)
 
     def __str__(self):
         return self.user.username
-    
+        
 class TaskCategory(models.Model):
     name = models.CharField(max_length=100, null=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='task_categories', null=True)

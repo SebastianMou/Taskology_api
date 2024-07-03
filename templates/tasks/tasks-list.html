@@ -228,11 +228,8 @@ var activateItem = null;
 
 function buildList(categoryId) {
     var wrapper = document.getElementById('list-wrapper');
-
     var categoryHeader = document.getElementById('category-header');
     var categoryCreatedAt = document.getElementById('category-created-at');
-
-
     var url = `http://127.0.0.1:7000/api/task-list/${categoryId}/`;
 
     fetch(url)
@@ -253,6 +250,7 @@ function buildList(categoryId) {
                     second: '2-digit'
                 });
                 categoryCreatedAt.innerHTML = `Created at: ${formattedDate} ${formattedTime}`;
+                wrapper.innerHTML = ''; // Clear existing items
 
                 data.tasks.forEach(function(task) {
                     let updatedAt = new Date(task.updated_at);
@@ -269,18 +267,15 @@ function buildList(categoryId) {
 
                     var checked = task.completed ? 'checked' : '';
 
-                    // Remove existing item if it exists
-                    var existingItem = document.getElementById(`data-row-${task.id}`);
-                    if (existingItem) {
-                        existingItem.parentNode.removeChild(existingItem);
-                    }
+                    // Escape special characters in the task description
+                    var taskDescription = task.description.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
                     var item = `
                         <ul class="list-group" id="data-row-${task.id}">
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center">
                                     <input type="checkbox" class="me-4 checkmark confetti-checkbox" id="confettiCheckbox${task.id}" ${checked}>
-                                    <span class="me-2 edit" data-task-id="${task.id}" data-task-title="${task.title}" data-task-completion-date="${task.completion_date}" data-task-completion-time="${task.completion_time}" data-task-description="${task.description}" data-task-completed="${task.completed}" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight">${task.title}</span>
+                                    <span class="me-2 edit" data-task-id="${task.id}" data-task-title="${task.title}" data-task-completion-date="${task.completion_date}" data-task-completion-time="${task.completion_time}" data-task-description="${taskDescription}" data-task-completed="${task.completed}" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight">${task.title}</span>
                                     <span class="ms-4 mobile-hide">${task.completion_date}</span>
                                     <span class="ms-4 mobile-hide">${task.completion_time}</span>
                                     <span class="ms-4 mobile-hide">${formattedUpdatedDate} ${formattedUpdatedTime}</span>
@@ -291,17 +286,15 @@ function buildList(categoryId) {
                                     </button>
                                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton${task.id}">
                                         <li>
-                                            <button class="dropdown-item edit" data-task-id="${task.id}" data-task-title="${task.title}" data-task-completion-date="${task.completion_date}" data-task-completion-time="${task.completion_time}" data-task-description="${task.description}" data-task-completed="${task.completed}" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight">
+                                            <button class="dropdown-item edit" data-task-id="${task.id}" data-task-title="${task.title}" data-task-completion-date="${task.completion_date}" data-task-completion-time="${task.completion_time}" data-task-description="${taskDescription}" data-task-completed="${task.completed}" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight">
                                                 <i class="align-middle me-2" data-feather="edit"></i> Edit
                                             </button>
                                         </li>
-
                                         <li>
                                             <button class="dropdown-item delete" data-task-id="${task.id}">
                                                 <i class="align-middle me-2" data-feather="delete"></i> Delete
                                             </button>
                                         </li>
-
                                         <li>
                                             <button class="dropdown-item task-title" data-task-id="${task.id}" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight1" aria-controls="sidebarRight1">
                                                 <i class="align-middle me-2" data-feather="book-open"></i> Read
@@ -315,54 +308,8 @@ function buildList(categoryId) {
                     wrapper.innerHTML += item;
                 });
 
-                // Attach event listeners to task titles
-                document.querySelectorAll('.task-title').forEach(function(taskTitle) {
-                    taskTitle.addEventListener('click', function() {
-                        var taskId = this.getAttribute('data-task-id');
-                        displayTaskDetail(taskId);
-                    });
-                });
-
-                // Attach event listeners to edit buttons
-                document.querySelectorAll('.edit').forEach(function(editBtn) {
-                    editBtn.addEventListener('click', function() {
-                        var taskId = this.getAttribute('data-task-id');
-                        var taskTitle = this.getAttribute('data-task-title');
-                        var taskCompletionDate = this.getAttribute('data-task-completion-date');
-                        var taskCompletionTime = this.getAttribute('data-task-completion-time');
-                        var taskDescription = this.getAttribute('data-task-description');
-                        var taskCompleted = this.getAttribute('data-task-completed') === 'true';
-
-                        editItem(taskId, taskTitle, taskCompletionDate, taskCompletionTime, taskDescription, taskCompleted);
-                    });
-                });
-
-                // Attach event listeners to delete buttons
-                document.querySelectorAll('.delete').forEach(function(deleteBtn) {
-                    deleteBtn.addEventListener('click', function() {
-                        var taskId = this.getAttribute('data-task-id');
-                        deleteItem(taskId);
-                    });
-                });
-
-                // Attach event listeners to checkboxes for updating completion status
-                document.querySelectorAll('.confetti-checkbox').forEach(function(checkbox) {
-                    checkbox.addEventListener('change', function() {
-                        console.log('Checkbox changed:', this);
-                        var taskId = this.id.replace('confettiCheckbox', '');
-                        var completed = this.checked;
-                        updateTaskCompletionStatus(taskId, completed);
-
-                        if (this.checked) {
-                            console.log('Checkbox is checked, playing sound...');
-                            playPopSound();
-                            for (let i = 0; i < 30; i++) {
-                                createConfettiParticle(this);
-                            }
-                        }
-                    });
-                });
-
+                // Attach event listeners (same as before)
+                attachEventListeners();
                 feather.replace();
             }
         })
@@ -370,6 +317,57 @@ function buildList(categoryId) {
             console.log('Error:', error);
         });
 }
+
+function attachEventListeners() {
+    // Attach event listeners to task titles
+    document.querySelectorAll('.task-title').forEach(function(taskTitle) {
+        taskTitle.addEventListener('click', function() {
+            var taskId = this.getAttribute('data-task-id');
+            displayTaskDetail(taskId);
+        });
+    });
+
+    // Attach event listeners to edit buttons
+    document.querySelectorAll('.edit').forEach(function(editBtn) {
+        editBtn.addEventListener('click', function() {
+            var taskId = this.getAttribute('data-task-id');
+            var taskTitle = this.getAttribute('data-task-title');
+            var taskCompletionDate = this.getAttribute('data-task-completion-date');
+            var taskCompletionTime = this.getAttribute('data-task-completion-time');
+            var taskDescription = this.getAttribute('data-task-description').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+            var taskCompleted = this.getAttribute('data-task-completed') === 'true';
+
+            editItem(taskId, taskTitle, taskCompletionDate, taskCompletionTime, taskDescription, taskCompleted);
+        });
+    });
+
+    // Attach event listeners to delete buttons
+    document.querySelectorAll('.delete').forEach(function(deleteBtn) {
+        deleteBtn.addEventListener('click', function() {
+            var taskId = this.getAttribute('data-task-id');
+            deleteItem(taskId);
+        });
+    });
+
+    // Attach event listeners to checkboxes for updating completion status
+    document.querySelectorAll('.confetti-checkbox').forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+            console.log('Checkbox changed:', this);
+            var taskId = this.id.replace('confettiCheckbox', '');
+            var completed = this.checked;
+            updateTaskCompletionStatus(taskId, completed);
+
+            if (this.checked) {
+                console.log('Checkbox is checked, playing sound...');
+                playPopSound();
+                for (let i = 0; i < 30; i++) {
+                    createConfettiParticle(this);
+                }
+            }
+        });
+    });
+}
+
 
 function playPopSound() {
     var audio = document.getElementById('pop-sound');
