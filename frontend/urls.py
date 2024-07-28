@@ -15,14 +15,18 @@ urlpatterns = [
     path('check_email/', views.check_email, name='check_email'),
 
     path('pages/', views.pages, name='pages'),
-    path('interests/', views.interests, name='interests'),  # Updated path
+    path('interests/', views.interests, name='interests'),
+    path('calender/', views.calender, name='calender'),
+    path('goal-form/', views.goal_form_view, name='goal_form'),
 
     path('delete_account/', views.delete_account, name='delete_account'),
-
     path('search/', views.search, name='search'),
 
     # activación de la cuenta de usuario por correo electrónico
     path('activate/<uidb64>/<token>', views.activate, name='activate'),
+
+    # AI
+    path('chatgpt_tester/', views.chatgpt_tester, name='chatgpt_tester'),
 
     # User change password from account 
     path('change_password/', login_required(auth_views.PasswordChangeView.as_view(template_name='password-control/password_change.html', success_url='/password_changed/')), name='password_change'),

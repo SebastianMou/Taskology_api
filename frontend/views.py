@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate, logout, get_user_model
 from django.contrib import messages
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
@@ -10,9 +11,10 @@ from .tokens import account_activation_token
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMessage
 from django.core.paginator import Paginator
+import openai
 
-from .forms import RegisterForm, ProfileForm
-from api.models import TaskCategory, Task, Profile
+from .forms import RegisterForm, ProfileForm, GoalForm
+from api.models import TaskCategory, Task, Profile, Goal
 
 # Create your views here.
 @login_required
@@ -141,12 +143,11 @@ def interests(request):
             form.save()
             # Reset the session variable
             request.session['interests'] = False
-            return redirect('pages')  # Redirect to a success page
+            return redirect('goal_form')  # Redirect to a success page
     else:
         form = ProfileForm(instance=request.user.profile)
     
     return render(request, 'authentication/interests.html', {'form': form})
-
 
 def logout_view(request):
     logout(request)
@@ -179,7 +180,9 @@ def pages(request):
     user_interests = user_profile.interests.all()
     
     context = {
-        'user_interests': user_interests
+        'user_profile': user_profile,
+        'user_interests': user_interests,
+        'phone_number': user_profile.phone_number,
     }
 
     return render(request, 'password-control/pages.html', context)
@@ -206,3 +209,48 @@ def search(request):
     }
     return render(request, 'tasks/search.html', context)
 
+def calender(request):
+    return render(request, 'tasks/calender.html')
+
+@login_required
+def goal_form_view(request):
+    profile = Profile.objects.get(user=request.user)
+    
+    if profile.goal:
+        # User already has a goal, let's edit it
+        form = GoalForm(request.POST or None, instance=profile.goal)
+    else:
+        # User does not have a goal, let's create a new one
+        form = GoalForm(request.POST or None)
+
+    if request.method == 'POST':
+        if form.is_valid():
+            goal_form = form.save()
+            profile.goal = goal_form
+            profile.save()
+            return redirect('/')  # Redirect to home page or success page
+
+    context = {
+        'form': form,
+    }
+
+    return render(request, 'authentication/goal_form.html', context)
+
+def chatgpt_tester(request):
+    openai.api_key = settings.OPENAI_API_KEY
+
+    # Create a chat completion
+    completion = openai.chat.completions.create(
+    model="gpt-4-turbo",
+    messages=[
+        {"role": "system", "content": "You are a poetic assistant, skilled in explaining complex programming concepts with creative flair."},
+        {"role": "user", "content": "Compose a poem that explains the concept of recursion in programming. (but make it supper short)"}
+    ]
+    )
+
+    # Print the response
+    print(completion.choices[0].message.content)
+
+    poem = completion.choices[0].message.content
+
+    return render(request, 'AI/chatgpt_tester.html', {'poem': poem})

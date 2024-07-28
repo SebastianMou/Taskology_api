@@ -20,4 +20,8 @@ urlpatterns = [
     path('tasks/search/', views.search_tasks, name='search-tasks'),
     path('categories/search/', views.search_categories, name='search-categories'),
 
+    path('calendar/', views.calendar_events, name='calendar-events'),
+    path('update-profile/', views.update_profile, name='update-profile'),
+
+
 ] 

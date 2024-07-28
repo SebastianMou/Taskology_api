@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from api.models import Profile, Interest
+from api.models import Profile, Interest, Goal
 
 
 class RegisterForm(UserCreationForm):
@@ -76,58 +76,37 @@ class RegisterForm(UserCreationForm):
 
 class ProfileForm(forms.ModelForm):
     INTEREST_CHOICES = [
-        ('Get fit', 'Get fit'),
-        ('Lose weight', 'Lose weight'),
-        ('Build muscle', 'Build muscle'),
-        ('Run a marathon', 'Run a marathon'),
-        ('Eat healthier', 'Eat healthier'),
-        ('Quit smoking', 'Quit smoking'),
-        ('Reduce stress', 'Reduce stress'),
-        ('Improve sleep quality', 'Improve sleep quality'),
-        ('Get a promotion', 'Get a promotion'),
-        ('Change careers', 'Change careers'),
-        ('Start a business', 'Start a business'),
-        ('Improve skills', 'Improve skills'),
-        ('Network with professionals', 'Network with professionals'),
         ('Achieve work-life balance', 'Achieve work-life balance'),
-        ('Learn a new language', 'Learn a new language'),
-        ('Get a degree', 'Get a degree'),
-        ('Read more books', 'Read more books'),
-        ('Take online courses', 'Take online courses'),
-        ('Attend workshops or seminars', 'Attend workshops or seminars'),
-        ('Develop a new hobby', 'Develop a new hobby'),
-        ('Travel to new places', 'Travel to new places'),
-        ('Volunteer for a cause', 'Volunteer for a cause'),
-        ('Improve time management', 'Improve time management'),
-        ('Enhance creativity', 'Enhance creativity'),
-        ('Build self-confidence', 'Build self-confidence'),
-        ('Practice mindfulness or meditation', 'Practice mindfulness or meditation'),
-        ('Save more money', 'Save more money'),
-        ('Reduce debt', 'Reduce debt'),
-        ('Invest in stocks', 'Invest in stocks'),
-        ('Buy a house', 'Buy a house'),
-        ('Plan for retirement', 'Plan for retirement'),
-        ('Create a budget', 'Create a budget'),
-        ('Improve family relationships', 'Improve family relationships'),
-        ('Make new friends', 'Make new friends'),
-        ('Spend more quality time with loved ones', 'Spend more quality time with loved ones'),
-        ('Strengthen romantic relationships', 'Strengthen romantic relationships'),
-        ('Organize home space', 'Organize home space'),
-        ('Renovate home', 'Renovate home'),
-        ('Create a garden', 'Create a garden'),
-        ('Adopt a pet', 'Adopt a pet'),
-        ('Write a book', 'Write a book'),
-        ('Learn to play an instrument', 'Learn to play an instrument'),
-        ('Improve public speaking skills', 'Improve public speaking skills'),
-        ('Meditate daily', 'Meditate daily'),
-        ('Learn to cook', 'Learn to cook'),
-        ('Practice yoga', 'Practice yoga'),
-        ('Travel to all continents', 'Travel to all continents'),
-        ('Complete a triathlon', 'Complete a triathlon'),
-        ('Learn to code', 'Learn to code'),
-        ('Start a blog or vlog', 'Start a blog or vlog')
+        ('Advance in career', 'Advance in career'),
+        ('Build a personal brand', 'Build a personal brand'),
+        ('Improve fitness levels', 'Improve fitness levels'),
+        ('Develop a healthy eating plan', 'Develop a healthy eating plan'),
+        ('Master a new skill', 'Master a new skill'),
+        ('Cultivate a hobby', 'Cultivate a hobby'),
+        ('Improve mental health', 'Improve mental health'),
+        ('Establish a daily routine', 'Establish a daily routine'),
+        ('Enhance digital literacy', 'Enhance digital literacy'),
+        ('Improve financial literacy', 'Improve financial literacy'),
+        ('Volunteer regularly', 'Volunteer regularly'),
+        ('Reduce screen time', 'Reduce screen time'),
+        ('Improve sleep hygiene', 'Improve sleep hygiene'),
+        ('Develop emotional intelligence', 'Develop emotional intelligence'),
+        ('Improve negotiation skills', 'Improve negotiation skills'),
+        ('Enhance leadership skills', 'Enhance leadership skills'),
+        ('Learn mindfulness practices', 'Learn mindfulness practices'),
+        ('Develop a personal development plan', 'Develop a personal development plan'),
+        ('Improve organizational skills', 'Improve organizational skills'),
+        ('Strengthen family bonds', 'Strengthen family bonds'),
+        ('Enhance social skills', 'Enhance social skills'),
+        ('Build a personal library', 'Build a personal library'),
+        ('Improve environmental sustainability habits', 'Improve environmental sustainability habits'),
+        ('Learn to manage stress', 'Learn to manage stress'),
+        ('Enhance problem-solving skills', 'Enhance problem-solving skills'),
+        ('Develop a creative project', 'Develop a creative project'),
+        ('Achieve specific fitness milestones (e.g., run 5K)', 'Achieve specific fitness milestones (e.g., run 5K)'),
+        ('Improve study habits', 'Improve study habits'),
+        ('Learn time management techniques', 'Learn time management techniques'),
     ]
-
 
 
     interests = forms.MultipleChoiceField(
@@ -149,3 +128,8 @@ class ProfileForm(forms.ModelForm):
                 interest_obj, created = Interest.objects.get_or_create(name=interest)
                 profile.interests.add(interest_obj)
         return profile
+    
+class GoalForm(forms.ModelForm):
+    class Meta:
+        model = Goal
+        fields = '__all__'  # or list specific fields if needed

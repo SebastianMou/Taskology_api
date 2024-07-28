@@ -1,6 +1,6 @@
 # admin.py
 from django.contrib import admin
-from .models import TaskCategory, Task, SubTask, Profile
+from .models import TaskCategory, Task, SubTask, Profile, Goal
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 
@@ -23,3 +23,4 @@ admin.site.register(TaskCategory)
 admin.site.register(Task)
 admin.site.register(SubTask)
 admin.site.register(Profile)
+admin.site.register(Goal)
