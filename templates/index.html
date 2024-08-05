@@ -79,29 +79,29 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.min.js"></script>
 
 <script>
-    // Function to get CSRF token
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
+// Function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
             }
         }
-        return cookieValue;
     }
+    return cookieValue;
+}
 
-    const csrftoken = getCookie('csrftoken');
+const csrftoken = getCookie('csrftoken');
 
-    var activeItem = null;
-    
-    buildList();
+var activeItem = null;
 
-    function buildList() {
+buildList();
+
+function buildList() {
     var wrapper = document.getElementById('taskCategoryCards');
     wrapper.innerHTML = ''
     var url = 'http://127.0.0.1:7000/api/task-project/';
@@ -211,8 +211,8 @@
     });
 }
 
-    // Task project create
-    var form = document.getElementById('form-wrapper');
+// Task project create
+var form = document.getElementById('form-wrapper');
 form.addEventListener('submit', function(e) {
     e.preventDefault();
     console.log('form submitted');
@@ -253,38 +253,37 @@ form.addEventListener('submit', function(e) {
 });
 
 
-    function taskCategoryEdit(item){
-        console.log('item clicked: ', item)
-        activeItem = item
-        document.getElementById('name').value = activeItem.name
-        document.getElementById('due_date').value = activeItem.due_date
-    }
+function taskCategoryEdit(item){
+    console.log('item clicked: ', item)
+    activeItem = item
+    document.getElementById('name').value = activeItem.name
+    document.getElementById('due_date').value = activeItem.due_date
+}
 
-    function taskCategoryDelete(item) {
-        console.log('Delete click')
-        fetch(`http://127.0.0.1:7000/api/task-project-delete/${item.id}/`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken,
-            },
-        }).then((response) => {
-            buildList()
+function taskCategoryDelete(item) {
+    console.log('Delete click')
+    fetch(`http://127.0.0.1:7000/api/task-project-delete/${item.id}/`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+    }).then((response) => {
+        buildList()
+    })
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var taskId = window.location.pathname.split('/').pop();
+    var url = `/api/task-list/${taskId}/`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            var taskDetail = document.getElementById('task-list');
+            taskDetail.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
         })
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        var taskId = window.location.pathname.split('/').pop();
-        var url = `/api/task-list/${taskId}/`;
-
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                var taskDetail = document.getElementById('task-list');
-                taskDetail.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-            })
-            .catch(error => console.error('Error:', error));
-    });
-
+        .catch(error => console.error('Error:', error));
+});
 </script>
 {% endblock %}

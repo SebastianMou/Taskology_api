@@ -14,6 +14,7 @@
 <script>
     tinymce.init({
         selector: 'textarea#description',
+        height: 900,
         plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak',
         toolbar_mode: 'floating',
         skin: 'oxide-dark',  // Use the dark skin provided by TinyMCE
@@ -110,7 +111,154 @@
         border-bottom: 2px solid rgba(255, 255, 255, 0.281);
         border-radius: 0;
     }
+    .underline-border {
+        border: none;
+        border-bottom: 1px solid #dddddd69; /* Adjust the color as needed */
+    }
+
+    .fixed-button {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 40px;
+        height: 40px;
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        font-size: 16px;
+        border-radius: 60%;
+    }
+
+    .fixed-button:hover {
+        background-color: #0056b3;
+    }
+
+    .dropdown-menu {
+        background-color: transparent; /* Make background transparent */
+        border: none; /* Remove border for cleaner look */
+        box-shadow: none; /* Remove shadow for complete transparency */
+    }
+
+    .dropdown-item {
+        padding: 10px 20px;
+    }
+
+    /* Styles for the popup */
+    .popup {
+        position: fixed;
+        bottom: 0px;
+        right: 70px;
+        width: 500px;
+        height: 30%;
+        background-color: white;
+        border: 1px solid #ddd;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        border-radius: 5px;
+        padding: 10px;
+        display: none; 
+        z-index: 1000;
+        background-color: #222e3c;
+    }
+
+    /* Close button styles */
+    .close-popup-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: transparent;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+        .popup {
+            width: 80%;
+            background-color: #222e3c;
+        }
+
+    }
 </style>
+<div class="dropup">
+    <button class="btn btn-secondary fixed-button" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false" >
+        <i data-feather="plus"></i>
+    </button>
+    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+        <li><a class="dropdown-item" id="openPopupBtn" href="#"><i class="align-middle me-2 fas fa-fw fa-brain"></i> Anton Thoughts</a></li>
+        <li><a class="dropdown-item" href="#"><i class="align-middle me-2 far fa-fw fa-file-pdf"></i> PDF</a></li>
+        <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight"><i class="align-middle me-2 fas fa-fw fa-plus"></i> Add Task</a></li>
+    </ul>
+</div>
+
+<div class="popup" id="popup">
+    <button class="close-popup-btn" id="closePopupBtn">&times;</button>
+    <h4 style="color: white;">Anton Thoughts</h4>
+    <div class="overflow-auto" style="height: 100%;">
+        <p id="aiAnalysisContent">This is a simple popup at the bottom right of the page.</p>
+        <br>
+    </div>
+</div>
+
+<script>
+const openPopupBtn = document.getElementById('openPopupBtn');
+const closePopupBtn = document.getElementById('closePopupBtn');
+const popup = document.getElementById('popup');
+const aiAnalysisContent = document.getElementById('aiAnalysisContent');
+
+// Function to type out the text letter by letter
+function typeWriterEffect(text, element, delay = 2) {
+    element.innerHTML = '';  // Clear existing content
+    let index = 0;
+
+    function type() {
+        if (index < text.length) {
+            element.innerHTML += text.charAt(index);
+            index++;
+            setTimeout(type, delay);
+        }
+    }
+
+    type();
+}
+
+// Function to open the popup and fetch AI analysis
+openPopupBtn.addEventListener('click', function() {
+    // Display loading text while fetching data
+    aiAnalysisContent.textContent = 'Loading...';
+
+    // Fetch the analysis from the server
+    fetch('/api/task-analysis/102/')
+        .then(response => response.json())
+        .then(data => {
+            // Use the typeWriterEffect function to display the analysis content
+            typeWriterEffect(data.analysis, aiAnalysisContent);
+
+            // Open the popup
+            popup.style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error fetching AI analysis:', error);
+            aiAnalysisContent.textContent = 'Error fetching analysis. Please try again later.';
+            popup.style.display = 'block'; // Show error message in popup
+        });
+});
+
+// Function to close the popup
+closePopupBtn.addEventListener('click', function() {
+    popup.style.display = 'none';
+});
+
+// Close the popup when clicking outside of it
+window.addEventListener('click', function(event) {
+    if (event.target === popup) {
+        popup.style.display = 'none';
+    }
+});
+
+</script>
 
 <div class="container-fluid p-0">
     <div class="card">
@@ -126,7 +274,9 @@
                 var categoryId = {{ pk }};
             </script>
             <button class="btn btn-danger" style="border-radius: 0px;" onclick="deleteAllTasksInCategory(categoryId)"><i class="align-middle me-2" data-feather="trash"></i></button>
+
             <button class="btn btn-primary top_add_button ms-auto" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight"><i style="color: #fff;" data-feather="plus"></i></button>
+            <button class="btn btn-outline-secondary" id="aiAnalysisButton">AI</button>
         </div>
         
         <div class="card-body">
@@ -153,6 +303,12 @@
         #sidebarRight, #sidebarRight2, #sidebarRight1 {
             width: 100% !important;
         }
+    }
+    .button-wrapper {
+        position: sticky;
+        bottom: 0;
+        width: 100%;
+        padding: 10px;
     }
 </style>
 <!-- Sidebar Content Create Task -->
@@ -181,7 +337,14 @@
                 <div class="mb-3">
                     <textarea id="description" class="form-control" name="description" placeholder="Description" rows="3"></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary">Add Task</button>
+                <div class="button-wrapper">
+                    <div class="d-flex">
+                        <button type="submit" class="btn btn-primary form-control" style="margin-right: 4px;">
+                            <i class="align-middle me-2 fas fa-fw fa-plus"></i>Add Task
+                        </button>
+                        <button type="butdton" class="text-reset btn btn-outline-danger" data-bs-dismiss="offcanvas" aria-label="Close">Close</button>
+                    </div>
+                </div>
             </form>
         </div>
     </div>
@@ -269,12 +432,16 @@ function buildList(categoryId) {
                     // Escape special characters in the task description
                     var taskDescription = task.description.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
+                    // Truncate title based on screen size
+                    var titleLimit = isMobile() ? 27 : 60;
+                    var truncatedTitle = truncateText(task.title, titleLimit);
+
                     var item = `
                         <ul class="list-group" id="data-row-${task.id}">
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <li class="list-group-item d-flex justify-content-between align-items-center underline-border">
                                 <div class="d-flex align-items-center">
                                     <input type="checkbox" class="me-4 checkmark confetti-checkbox" id="confettiCheckbox${task.id}" ${checked}>
-                                    <span class="me-2 edit" data-task-id="${task.id}" data-task-title="${task.title}" data-task-completion-date="${task.completion_date}" data-task-completion-time="${task.completion_time}" data-task-description="${taskDescription}" data-task-completed="${task.completed}" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight">${task.title}</span>
+                                    <span class="me-2 edit" data-task-id="${task.id}" data-task-title="${task.title}" data-task-completion-date="${task.completion_date}" data-task-completion-time="${task.completion_time}" data-task-description="${taskDescription}" data-task-completed="${task.completed}" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight">${truncatedTitle}</span>
                                     <span class="ms-4 mobile-hide">${task.completion_date}</span>
                                     <span class="ms-4 mobile-hide">${task.completion_time}</span>
                                     <span class="ms-4 mobile-hide">${formattedUpdatedDate} ${formattedUpdatedTime}</span>
@@ -315,6 +482,17 @@ function buildList(categoryId) {
         .catch(function(error) {
             console.log('Error:', error);
         });
+}
+
+function truncateText(text, limit) {
+    if (text.length > limit) {
+        return text.substring(0, limit) + '...';
+    }
+    return text;
+}
+
+function isMobile() {
+    return window.innerWidth <= 768; // Adjust the width according to your mobile breakpoint
 }
 
 function attachEventListeners() {

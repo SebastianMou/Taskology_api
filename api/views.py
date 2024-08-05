@@ -3,14 +3,20 @@ from django.http import JsonResponse, HttpResponseRedirect
 from rest_framework import status
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
+from django.conf import settings
+from django.contrib.auth.decorators import login_required
 
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
-
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .serializer import TaskCategorySerializer, TaskSerializer, SubTaskSerializer, ProfileSerializer
 from .models import TaskCategory, Task, SubTask, Profile
+import openai
+
+openai.api_key = settings.OPENAI_API_KEY  # Replace with your actual OpenAI API key
 
 # Create your views here.
 @api_view(['GET'])
@@ -33,6 +39,8 @@ def apiOverview(request):
         'Calender': '/calendar/',
         ## Profile
         'Update Profile': '/update-profile/',
+        ## Analysis
+        'Analysis': '/task-analysis/<int:category_id>/',
     }
     return Response(api_urls)
 
@@ -184,3 +192,60 @@ def update_profile(request):
         serializer.save()
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+def analyze_task_difficulty(tasks):
+    # Prepare a list of tasks to analyze
+    task_descriptions = "\n".join(
+        f"Task: {task['title']}\nDescription: {task.get('description', 'No description')}\nDue Date: {task.get('due_date', 'No due date')}\n"
+        for task in tasks
+    )
+
+    # Define messages for the chat-based model
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are a Productivity Assistant that helps users prioritize and complete their tasks efficiently. "
+                "Consider the following criteria when recommending task order: "
+                "1. Urgency: Tasks with closer deadlines should be prioritized. "
+                "2. Importance: Identify tasks that have significant impact or value. "
+                "3. Complexity: Balance complex tasks with easier ones to maintain motivation. "
+                "4. Energy Levels: Recommend tasks based on the user's energy and focus patterns. "
+                "5. Dependencies: Ensure prerequisite tasks are completed first."
+            )
+        },
+        {
+            "role": "user",
+            "content": (
+                f"Analyze the following tasks and suggest the order in which they should be completed. "
+                f"Provide a **short summary** for each task in the suggested order:\n\n{task_descriptions}"
+            )
+        }
+    ]
+
+    # Call the OpenAI API with chat-based completion
+    response = openai.chat.completions.create(
+        model="gpt-3.5-turbo",  # or "gpt-4" if you have access
+        messages=messages,
+        max_tokens=250,
+        temperature=0.5
+    )
+
+    # Extract the response text correctly
+    print(task_descriptions)
+    print(response.choices[0].message.content.strip())
+    analysis = response.choices[0].message.content.strip()
+    return analysis
+
+@login_required
+def task_analysis(request, category_id):
+    # Fetch tasks for the category
+    tasks = Task.objects.filter(category_id=category_id, owner=request.user)
+    task_list = tasks.values('title', 'description', 'due_date')
+
+    # Analyze task difficulty using OpenAI
+    analysis = analyze_task_difficulty(task_list)
+
+    return JsonResponse({'analysis': analysis})
+
+

@@ -23,5 +23,5 @@ urlpatterns = [
     path('calendar/', views.calendar_events, name='calendar-events'),
     path('update-profile/', views.update_profile, name='update-profile'),
 
-
+    path('task-analysis/<int:category_id>/', views.task_analysis, name='task-analysis'),
 ] 

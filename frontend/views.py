@@ -16,6 +16,8 @@ import openai
 from .forms import RegisterForm, ProfileForm, GoalForm
 from api.models import TaskCategory, Task, Profile, Goal
 
+openai.api_key = settings.OPENAI_API_KEY
+
 # Create your views here.
 @login_required
 def index(request):
@@ -235,6 +237,7 @@ def goal_form_view(request):
     }
 
     return render(request, 'authentication/goal_form.html', context)
+
 
 def chatgpt_tester(request):
     openai.api_key = settings.OPENAI_API_KEY
