@@ -5,6 +5,8 @@ from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Max
 
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -12,8 +14,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .serializer import TaskCategorySerializer, TaskSerializer, SubTaskSerializer, ProfileSerializer
-from .models import TaskCategory, Task, SubTask, Profile
+from .serializer import TaskCategorySerializer, TaskSerializer, SubTaskSerializer, ProfileSerializer, NotificationsSerializer
+from .models import TaskCategory, Task, SubTask, Profile, Notifications
 import openai
 
 openai.api_key = settings.OPENAI_API_KEY  # Replace with your actual OpenAI API key
@@ -39,6 +41,8 @@ def apiOverview(request):
         'Calender': '/calendar/',
         ## Profile
         'Update Profile': '/update-profile/',
+        ## Notifications
+        'Notification': '/notifications/',
         ## Analysis
         'Analysis': '/task-analysis/<int:category_id>/',
     }
@@ -95,7 +99,7 @@ def task_project_delete(request, pk):
 @api_view(['GET'])
 def task_list(request, category_id):
     category = TaskCategory.objects.get(id=category_id, owner=request.user)
-    tasks = Task.objects.filter(owner=request.user, category=category_id)
+    tasks = Task.objects.filter(owner=request.user, category=category_id).order_by('position')
     serializer = TaskSerializer(tasks, many=True)
     category_serializer = TaskCategorySerializer(category)
     return Response({
@@ -109,16 +113,30 @@ def task_detail(request, pk):
     serializer = TaskSerializer(tasks, many=False)
     return Response(serializer.data)
 
+
 @api_view(['POST'])
 def task_create(request):
-    data = request.data.copy()  # Make a mutable copy of request data
-    data['owner'] = request.user.id  # Set the owner field based on the authenticated user
+    data = request.data
+    owner = request.user
+    category = TaskCategory.objects.get(id=data['category'])
 
-    serializer = TaskSerializer(data=data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # Get the highest current position in the category and add 1
+    max_position = Task.objects.filter(category=category, owner=owner).aggregate(Max('position'))['position__max']
+    new_position = (max_position or 0) + 1
+
+    task = Task.objects.create(
+        category=category,
+        title=data['title'],
+        completed=data.get('completed', False),
+        completion_date=data.get('completion_date'),
+        completion_time=data.get('completion_time'),
+        description=data.get('description', ''),
+        position=new_position,
+        owner=owner
+    )
+
+    serializer = TaskSerializer(task, many=False)
+    return Response(serializer.data)
 
 @api_view(['POST'])
 def task_update(request, pk):
@@ -173,12 +191,14 @@ def search_categories(request):
         return Response(serialized_categories.data)
     return Response({"message": "No query provided."}, status=400)
 
+## CALENDER
 @api_view(['GET'])
 def calendar_events(request):
     tasks = Task.objects.all()
     serializer = TaskSerializer(tasks, many=True)
     return Response(serializer.data)
 
+## PROFILE
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_profile(request):
@@ -193,6 +213,32 @@ def update_profile(request):
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+## NOTIFICATIONS
+@api_view(['GET'])
+def notifications(request):
+    notifications = Notifications.objects.all()
+    serializer = NotificationsSerializer(notifications, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def notification_detail(request, pk):
+    try:
+        notification = Notifications.objects.get(id=pk)
+        if not notification.read:
+            notification.read = True
+            notification.save()
+        serializer = NotificationsSerializer(notification, many=False)
+        return Response(serializer.data)
+    except Notifications.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['GET'])
+def unread_notifications_count(request):
+    count = Notifications.objects.filter(read=False).count()
+    return Response({'unread_count': count})
+
+
+## EVERYTHING AI
 def analyze_task_difficulty(tasks):
     # Prepare a list of tasks to analyze
     task_descriptions = "\n".join(
@@ -247,5 +293,18 @@ def task_analysis(request, category_id):
     analysis = analyze_task_difficulty(task_list)
 
     return JsonResponse({'analysis': analysis})
+
+## SORTABLEJS - (https://sortablejs.github.io/Sortable/)
+@csrf_exempt
+@api_view(['POST'])
+def update_task_positions(request):
+    data = request.data
+    for task_data in data:
+        task_id = task_data['id']
+        new_position = task_data['position']
+        task = Task.objects.get(id=task_id, owner=request.user)
+        task.position = new_position
+        task.save()
+    return Response({'success': True}, status=status.HTTP_200_OK)
 
 

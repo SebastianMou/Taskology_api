@@ -22,11 +22,17 @@
 	<!-- Choose your prefered color scheme -->
 	<!-- <link href="css/light.css" rel="stylesheet"> -->
 	<!-- <link href="css/dark.css" rel="stylesheet"> -->
-
+	<!-- 
+		A.N.T.O.N 
+		A = Assistant 
+		N = Network 
+		T = Targeted 
+		O = Objectives
+		N = Navigation (NexTech) 
+	-->
 	<!-- BEGIN SETTINGS -->
 	<!-- Remove this after purchasing -->
 	<link class="js-stylesheet" href="{% static 'css/dark.css' %}" rel="stylesheet">
-	
     <style>
         body {
 			opacity: 0;
@@ -36,6 +42,17 @@
 		}
 		.align-middle:hover {
 			color: gray;
+		}
+		.position-absolute {
+			z-index: 100;
+			background-color: white;
+			width: 100%;
+			max-height: 200px;
+			overflow-y: auto;
+			border-radius: .25rem;
+		}
+		.progress-bar {
+			color: #fff;
 		}
     </style>
 	<!-- END SETTINGS -->
@@ -47,7 +64,6 @@
   data-sidebar-position: left (default), right
   data-sidebar-layout: default (default), compact
 -->
-
 <body data-theme="default" data-layout="fluid" data-sidebar-position="left" data-sidebar-layout="default">
 	<div class="wrapper">
 
@@ -110,6 +126,24 @@
 					</li>
 
 					<li class="sidebar-item">
+						<a class="sidebar-link" href="/">
+							<i class="align-middle me-2 fas fa-fw fa-tasks" style="color: #5784db;"></i> <span class="align-middle">Folders</span>
+						</a>
+					</li>
+
+					<li class="sidebar-item">
+						<a class="sidebar-link" href="{% url 'calender' %}">
+							<i class="align-middle" data-feather="calendar" style="color: #5784db;"></i> <span class="align-middle">Calendar</span>
+						</a>
+					</li>
+
+					<li class="sidebar-item">
+						<a class="sidebar-link" href="{% url 'invoice' %}">
+							<i class="align-middle" data-feather="credit-card" style="color: #5784db;"></i> <span class="align-middle">Invoice</span>
+						</a>
+					</li>
+
+					<!-- <li class="sidebar-item">
 						<a data-bs-target="#pages" data-bs-toggle="collapse" class="sidebar-link collapsed">
 							<i class="align-middle" data-feather="layout" style="color: #5784db;"></i> <span class="align-middle">Pages</span>
 						</a>
@@ -127,7 +161,7 @@
 										class="sidebar-badge badge bg-primary">Pro</span></a></li>
 							<li class="sidebar-item"><a class="sidebar-link" href="pages-blank.html">Blank Page</a></li>
 						</ul>
-					</li>
+					</li> -->
 
 					<li class="sidebar-item">
 						<a class="sidebar-link" href="{% url 'chatgpt_tester' %}">
@@ -135,19 +169,7 @@
 						</a>
 					</li>
 
-					<li class="sidebar-item">
-						<a class="sidebar-link" href="pages-invoice.html">
-							<i class="align-middle" data-feather="credit-card" style="color: #5784db;"></i> <span class="align-middle">Invoice</span>
-						</a>
-					</li>
-
-					<li class="sidebar-item">
-						<a class="sidebar-link" href="{% url 'calender' %}">
-							<i class="align-middle" data-feather="calendar" style="color: #5784db;"></i> <span class="align-middle">Calendar</span>
-						</a>
-					</li>
-
-					<li class="sidebar-item">
+					<!-- <li class="sidebar-item">
 						<a href="#auth" data-bs-toggle="collapse" class="sidebar-link collapsed">
 							<i class="align-middle" data-feather="users" style="color: #5784db;"></i> <span class="align-middle">Auth</span>
 						</a>
@@ -156,7 +178,7 @@
 							<li class="sidebar-item"><a class="sidebar-link" href="pages-sign-up.html">Sign Up</a></li>
 							<li class="sidebar-item"><a class="sidebar-link" href="pages-reset-password.html">Reset Password <span>
 						</ul>
-					</li>
+					</li> -->
 
 				</ul>
 
@@ -180,17 +202,8 @@
 				<a class="sidebar-toggle js-sidebar-toggle">
 					<i class="hamburger align-self-center"></i>
 				</a>
-				<style>
-					.position-absolute {
-						z-index: 100;
-						background-color: white;
-						width: 100%;
-						max-height: 200px;
-						overflow-y: auto;
-						border-radius: .25rem;
-					}
-				</style>
 
+				<!-- Main Search on base html file -->
 				<form method="POST" class="d-none d-sm-inline-block position-relative" action="{% url 'search' %}">
 					{% csrf_token %}
 					<div class="input-group input-group-navbar">
@@ -202,67 +215,12 @@
 					<div id="autocompleteResults" class="list-group position-absolute"></div>
 				</form>
 
-				<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-				<script>
-					 function searchItems() {
-						const query = document.getElementById('searchQuery').value;
-						if (query.length < 2) {
-							document.getElementById('autocompleteResults').innerHTML = '';
-							return;
-						}
-
-						Promise.all([
-							fetch(`/api/tasks/search/?q=${query}`).then(response => response.json()),
-							fetch(`/api/categories/search/?q=${query}`).then(response => response.json())
-						])
-						.then(([taskData, categoryData]) => {
-							console.log('Task Data:', taskData);  // Debugging
-							console.log('Category Data:', categoryData);  // Debugging
-
-							const autocompleteResults = document.getElementById('autocompleteResults');
-							autocompleteResults.innerHTML = '';
-
-							if (categoryData.length > 0) {
-								const categoryHeader = document.createElement('div');
-								categoryHeader.className = 'list-group-item active';
-								categoryHeader.textContent = 'Categories';
-								autocompleteResults.appendChild(categoryHeader);
-
-								categoryData.forEach(category => {
-									const categoryItem = document.createElement('a');
-									categoryItem.href = `/task-list/${category.id}/`; // Link to category detail page
-									categoryItem.className = 'list-group-item list-group-item-action';
-									categoryItem.innerHTML = `<strong>${category.name}</strong><br><small>Created on: ${new Date(category.created_at).toLocaleDateString()}</small>`;
-									autocompleteResults.appendChild(categoryItem);
-								});
-							}
-
-							if (taskData.length > 0) {
-								const taskHeader = document.createElement('div');
-								taskHeader.className = 'list-group-item active';
-								taskHeader.textContent = 'Tasks';
-								autocompleteResults.appendChild(taskHeader);
-
-								taskData.forEach(task => {
-									const taskItem = document.createElement('a');
-									taskItem.href = `/task-list/${task.category_id}/`; // Link to task detail page
-									taskItem.className = 'list-group-item list-group-item-action';
-									taskItem.innerHTML = `<strong>${task.title}</strong> - <small>${task.category_name || 'No Category'}</small><br><small>Created on: ${new Date(task.created_at).toLocaleDateString()}</small>`;
-									autocompleteResults.appendChild(taskItem);
-								});
-							}
-						})
-						.catch(error => console.error('Error:', error));
-					}
-
-					// Add event listener for clicks outside the input and results box
-					document.addEventListener('click', function(event) {
-						const isClickInside = document.getElementById('searchQuery').contains(event.target) || document.getElementById('autocompleteResults').contains(event.target);
-						if (!isClickInside) {
-							document.getElementById('autocompleteResults').innerHTML = '';
-						}
-					});
-				</script>
+				<!-- Yearlly progress bar -->
+				<div style="width: 25%; margin-left: 30px">
+					<div class="progress" title="">
+						<div id="yearProgress" class="progress-bar progress-bar-striped bg-info" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+					</div>
+				</div>
 
 				<div class="navbar-collapse collapse">
 					<ul class="navbar-nav navbar-align">
@@ -270,64 +228,145 @@
 							<a class="nav-icon dropdown-toggle" href="#" id="alertsDropdown" data-bs-toggle="dropdown">
 								<div class="position-relative">
 									<i class="align-middle" data-feather="bell"></i>
-									<span class="indicator">4</span>
+									<!-- notification number -->
+									<span class="indicator">0</span>
 								</div>
 							</a>
 							<div class="dropdown-menu dropdown-menu-lg dropdown-menu-end py-0" aria-labelledby="alertsDropdown">
 								<div class="dropdown-menu-header">
-									4 New Notifications
+									 <!-- New Notifications -->
 								</div>
-								<div class="list-group">
-									<a href="#" class="list-group-item">
-										<div class="row g-0 align-items-center">
-											<div class="col-2">
-												<i class="text-danger" data-feather="alert-circle"></i>
-											</div>
-											<div class="col-10">
-												<div class="text-dark">Update completed</div>
-												<div class="text-muted small mt-1">Restart server 12 to complete the update.</div>
-												<div class="text-muted small mt-1">30m ago</div>
-											</div>
-										</div>
-									</a>
-									<a href="#" class="list-group-item">
-										<div class="row g-0 align-items-center">
-											<div class="col-2">
-												<i class="text-warning" data-feather="bell"></i>
-											</div>
-											<div class="col-10">
-												<div class="text-dark">Lorem ipsum</div>
-												<div class="text-muted small mt-1">Aliquam ex eros, imperdiet vulputate hendrerit et.</div>
-												<div class="text-muted small mt-1">2h ago</div>
-											</div>
-										</div>
-									</a>
-									<a href="#" class="list-group-item">
-										<div class="row g-0 align-items-center">
-											<div class="col-2">
-												<i class="text-primary" data-feather="home"></i>
-											</div>
-											<div class="col-10">
-												<div class="text-dark">Login from 192.186.1.8</div>
-												<div class="text-muted small mt-1">5h ago</div>
-											</div>
-										</div>
-									</a>
-									<a href="#" class="list-group-item">
-										<div class="row g-0 align-items-center">
-											<div class="col-2">
-												<i class="text-success" data-feather="user-plus"></i>
-											</div>
-											<div class="col-10">
-												<div class="text-dark">New connection</div>
-												<div class="text-muted small mt-1">Christina accepted your request.</div>
-												<div class="text-muted small mt-1">14h ago</div>
-											</div>
-										</div>
-									</a>
+								
+								<div class="list-group" id="list-group-wrapper">
+									<!-- notifications display -->
 								</div>
+								<div id="notification-detail-container"></div>
+
+								<script>
+									// Notifications 
+									function buildList() {
+										var wrapper = document.getElementById('list-group-wrapper');
+								
+										var url = 'http://127.0.0.1:7000/api/notifications/';
+										
+										fetch(url)
+										.then((resp) => resp.json())
+										.then(function(data) {  // Pass 'data' as a parameter here
+											console.log('Data', data);  // Log the fetched data to the console
+											// You can now use 'data' to build your list in the wrapper
+											var notiflist = data
+											for (var i = 0; i < Math.min(5, notiflist.length); i++) {
+												// Truncate the title to 20 characters and add '...' if necessary
+												var title = notiflist[i].title;
+												if (title.length > 20) {
+													title = title.substring(0, 20) + '...';
+												}
+
+												// Determine the icon based on notification type
+												var icon;
+												switch (notiflist[i].notification_type) {
+													case 'info':
+														icon = '<i class="text-primary" data-feather="home"></i>';
+														break;
+													case 'warning':
+														icon = '<i class="text-warning" data-feather="bell"></i>';
+														break;
+													case 'error':
+														icon = '<i class="text-danger" data-feather="alert-circle"></i>';
+														break;
+													case 'success':
+														icon = '<i class="text-success" data-feather="user-plus"></i>';
+														break;
+													default:
+														icon = '<i class="text-muted" data-feather="info"></i>';  // Default icon
+												}
+
+												var item = `
+													<a href="#" class="list-group-item" data-id="${notiflist[i].id}">
+														<div class="row g-0 align-items-center">
+															<div class="col-2">
+																${icon}
+															</div>
+															<div class="col-10">
+																<div class="text-dark">${title}</div>
+																<div class="text-muted small mt-1">${new Date(notiflist[i].created_at).toLocaleString()}</div>
+															</div>
+														</div>
+													</a>
+												`;
+											wrapper.innerHTML += item
+											}
+										})
+										.catch(function(error) {
+											console.error('Error:', error);
+										});
+									}
+
+									// display notification detail  
+									function displayNotificationDetail(notificationId) {
+										var url = `http://127.0.0.1:7000/api/notification-detail/${notificationId}/`;
+
+										fetch(url)
+											.then((resp) => resp.json())
+											.then(function(data){
+												var notificationDetailContainer = document.getElementById('notification-detail-container');
+												if (notificationDetailContainer) {
+													notificationDetailContainer.innerHTML = `
+														<h2><b>${data.title}</b></h2>
+														<p>Created: ${new Date(data.created_at).toLocaleString()}</p>
+														<p>
+															<svg style="margin-right: 8px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clock-history" viewBox="0 0 16 16">
+																<path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022zm2.004.45a7 7 0 0 0-.985-.299l.219-.976q.576.129 1.126.342zm1.37.71a7 7 0 0 0-.439-.27l.493-.87a8 8 0 0 1 .979.654l-.615.789a7 7 0 0 0-.418-.302zm1.834 1.79a7 7 0 0 0-.653-.796l.724-.69q.406.429.747.91zm.744 1.352a7 7 0 0 0-.214-.468l.893-.45a8 8 0 0 1 .45 1.088l-.95.313a7 7 0 0 0-.179-.483m.53 2.507a7 7 0 0 0-.1-1.025l.985-.17q.1.58.116 1.17zm-.131 1.538q.05-.254.081-.51l.993.123a8 8 0 0 1-.23 1.155l-.964-.267q.069-.247.12-.501m-.952 2.379q.276-.436.486-.908l.914.405q-.24.54-.555 1.038zm-.964 1.205q.183-.183.35-.378l.758.653a8 8 0 0 1-.401.432z"/>
+																<path d="M8 1a7 7 0 1 0 4.95 11.95l.707.707A8.001 8.001 0 1 1 8 0z"/>
+																<path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5"/>
+															</svg> ${new Date(data.updated_at).toLocaleString()}
+														</p>
+														<p>${data.description}</p>
+													`;
+													feather.replace(); // Re-render feather icons if necessary
+												}
+											})
+											.catch(function(error) {
+												console.log('Error:', error);
+											});
+									}
+
+									function updateUnreadCount() {
+										var url = 'http://127.0.0.1:7000/api/unread-notifications-count/';
+
+										fetch(url)
+										.then((resp) => resp.json())
+										.then(function(data) {
+											var header = document.querySelector('.dropdown-menu-header');
+											var indicator = document.querySelector('.indicator');
+
+											// Update the dropdown header
+											header.innerHTML = `${data.unread_count} New Notifications`;
+
+											// Update the indicator span
+											indicator.innerHTML = `${data.unread_count}`;
+										})
+										.catch(function(error) {
+											console.error('Error:', error);
+									});
+}
+
+									document.getElementById('list-group-wrapper').addEventListener('click', function(e) {
+										if (e.target && e.target.matches('a.list-group-item')) {
+											var notificationId = e.target.getAttribute('data-id');
+											displayNotificationDetail(notificationId);
+										}
+									});
+
+									// Call the function after defining it
+									buildList();
+									// Call this function after the notifications list is built or periodically
+									updateUnreadCount();
+
+								</script>
+								
 								<div class="dropdown-menu-footer">
-									<a href="#" class="text-muted">Show all notifications</a>
+									<a href="{% url 'notifications_list' %}" class="text-muted">Show all notifications</a>
 								</div>
 							</div>
 						</li>
@@ -376,8 +415,84 @@
 	</div>
 
 	<script src="{% static 'js/app.js' %}"></script>
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 	<script>
+		// Main Search on base html file
+		function searchItems() {
+			const query = document.getElementById('searchQuery').value;
+			if (query.length < 2) {
+				document.getElementById('autocompleteResults').innerHTML = '';
+				return;
+			}
+
+			Promise.all([
+				fetch(`/api/tasks/search/?q=${query}`).then(response => response.json()),
+				fetch(`/api/categories/search/?q=${query}`).then(response => response.json())
+			])
+			.then(([taskData, categoryData]) => {
+				console.log('Task Data:', taskData);  // Debugging
+				console.log('Category Data:', categoryData);  // Debugging
+
+				const autocompleteResults = document.getElementById('autocompleteResults');
+				autocompleteResults.innerHTML = '';
+
+				if (categoryData.length > 0) {
+					const categoryHeader = document.createElement('div');
+					categoryHeader.className = 'list-group-item active';
+					categoryHeader.textContent = 'Categories';
+					autocompleteResults.appendChild(categoryHeader);
+
+					categoryData.forEach(category => {
+						const categoryItem = document.createElement('a');
+						categoryItem.href = `/task-list/${category.id}/`; // Link to category detail page
+						categoryItem.className = 'list-group-item list-group-item-action';
+						categoryItem.innerHTML = `<strong>${category.name}</strong><br><small>Created on: ${new Date(category.created_at).toLocaleDateString()}</small>`;
+						autocompleteResults.appendChild(categoryItem);
+					});
+				}
+
+				if (taskData.length > 0) {
+					const taskHeader = document.createElement('div');
+					taskHeader.className = 'list-group-item active';
+					taskHeader.textContent = 'Tasks';
+					autocompleteResults.appendChild(taskHeader);
+
+					taskData.forEach(task => {
+						const taskItem = document.createElement('a');
+						taskItem.href = `/task-list/${task.category_id}/`; // Link to task detail page
+						taskItem.className = 'list-group-item list-group-item-action';
+						taskItem.innerHTML = `<strong>${task.title}</strong> - <small>${task.category_name || 'No Category'}</small><br><small>Created on: ${new Date(task.created_at).toLocaleDateString()}</small>`;
+						autocompleteResults.appendChild(taskItem);
+					});
+				}
+			})
+			.catch(error => console.error('Error:', error));
+		}
+
+		// Add event listener for clicks outside the input and results box
+		document.addEventListener('click', function(event) {
+			const isClickInside = document.getElementById('searchQuery').contains(event.target) || document.getElementById('autocompleteResults').contains(event.target);
+			if (!isClickInside) {
+				document.getElementById('autocompleteResults').innerHTML = '';
+			}
+		});
+
+		// Yearlly progress bar
+		const startOfYear = new Date(new Date().getFullYear(), 0, 1);
+		const currentDate = new Date();
+		const totalDaysInYear = (new Date(currentDate.getFullYear(), 11, 31) - startOfYear) / (1000 * 60 * 60 * 24) + 1;
+		const daysPassed = (currentDate - startOfYear) / (1000 * 60 * 60 * 24);
+		const percentageOfYearPassed = (daysPassed / totalDaysInYear) * 100;
+
+		const progressBar = document.getElementById('yearProgress');
+		progressBar.style.width = `${percentageOfYearPassed.toFixed(2)}%`;
+		progressBar.setAttribute('aria-valuenow', percentageOfYearPassed.toFixed(2));
+		progressBar.innerText = `${percentageOfYearPassed.toFixed(2)}%`;
+
+		// Set the tooltip message on the progress bar's container
+		progressBar.parentNode.setAttribute('title', `You are ${percentageOfYearPassed.toFixed(2)}% through the year.`);
+
 		document.addEventListener("DOMContentLoaded", function() {
 			var ctx = document.getElementById("chartjs-dashboard-line").getContext("2d");
 			var gradientLight = ctx.createLinearGradient(0, 0, 0, 225);

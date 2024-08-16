@@ -1,16 +1,10 @@
 {% extends '../base.html' %}
 {% load static %}
-
+<title>{% block title %}Anton To Do.{% endblock %}</title>
 {% block content %}
 <audio id="pop-sound" src="{% static 'sound affect/happy-pop-2-185287.mp3' %}"></audio>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.1.2/tinymce.min.js" referrerpolicy="origin"></script>
-<style>
-    /* Ensure TinyMCE is usable */
-    textarea#description {
-        z-index: 1;
-        position: relative;
-    }
-</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
 <script>
     tinymce.init({
         selector: 'textarea#description',
@@ -34,160 +28,208 @@
     });
 </script>
 <style>
-    .checkmark {
-        width: 20px;
-        height: 20px;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
-        border: 2px solid #39B54A;
-        border-radius: 50%;
-        outline: none;
-        cursor: pointer;
-        position: relative;
-        transition: background-color 0.3s, transform 0.3s;
+    /* Ensure TinyMCE is usable */
+textarea#description {
+    z-index: 1;
+    position: relative;
+}
+
+.checkmark {
+    width: 20px;
+    height: 20px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border: 2px solid #39B54A;
+    border-radius: 50%;
+    outline: none;
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.checkmark:checked {
+    background-color: #39B54A;
+    transform: scale(1.2);
+}
+
+.checkmark:checked::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 6px;
+    height: 10px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.confetti {
+    position: absolute;
+    width: 5px;
+    height: 10px;
+    background-color: #f2d74e;
+    border-radius: 2px;
+    opacity: 0;
+    animation: confetti-fall 1s ease-out forwards;
+}
+
+@keyframes confetti-fall {
+    0% {
+        opacity: 1;
     }
 
-    .checkmark:checked {
-        background-color: #39B54A;
-        transform: scale(1.2);
-    }
-
-    .checkmark:checked::after {
-        content: '';
-        position: absolute;
-        left: 6px;
-        top: 2px;
-        width: 6px;
-        height: 10px;
-        border: solid #fff;
-        border-width: 0 2px 2px 0;
-        transform: rotate(45deg);
-    }
-
-    .confetti {
-        position: absolute;
-        width: 5px;
-        height: 10px;
-        background-color: #f2d74e;
-        border-radius: 2px;
+    100% {
+        transform: translate(var(--x), var(--y)) rotate(720deg);
         opacity: 0;
-        animation: confetti-fall 1s ease-out forwards;
+    }
+}
+
+.top_add_button {
+    width: 45px;
+    font-size: smaller;
+    border-radius: 0px;
+}
+
+.bottom_add_button {
+    width: 101px;
+    font-size: smaller;
+    margin-top: 9px;
+    border-radius: 0px;
+}
+
+/* Media query for mobile devices */
+@media (max-width: 768px) {
+    .mobile-hide {
+        display: none;
     }
 
-    @keyframes confetti-fall {
-        0% {
-            opacity: 1;
-        }
-        100% {
-            transform: translate(var(--x), var(--y)) rotate(720deg);
-            opacity: 0;
-        }
-    }
+}
 
-    .top_add_button {
-        width: 45px; 
-        font-size: smaller;
-        border-radius: 0px;
-    }
+#title,
+#completion_date,
+#completion_time {
+    border: none;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.281);
+    border-radius: 0;
+}
 
-    .bottom_add_button {
-        width: 101px;
-        font-size: smaller; 
-        margin-top: 9px; 
-        border-radius: 0px;
-    }
+.underline-border {
+    border: none;
+    border-bottom: 1px solid #dddddd69;
+    /* Adjust the color as needed */
+}
 
-    /* Media query for mobile devices */
-    @media (max-width: 768px) {
-        .mobile-hide {
-            display: none;
-        }
+.fixed-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    font-size: 16px;
+    border-radius: 60%;
+}
 
-    }
+.fixed-button:hover {
+    background-color: #0056b3;
+}
 
-    #title, #completion_date, #completion_time {
-        border: none;
-        border-bottom: 2px solid rgba(255, 255, 255, 0.281);
-        border-radius: 0;
-    }
-    .underline-border {
-        border: none;
-        border-bottom: 1px solid #dddddd69; /* Adjust the color as needed */
-    }
+#add-menu {
+    background-color: transparent;
+    /* Make background transparent */
+    border: none;
+    /* Remove border for cleaner look */
+    box-shadow: none;
+    /* Remove shadow for complete transparency */
+}
 
-    .fixed-button {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 40px;
-        height: 40px;
-        background-color: #007BFF;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        font-size: 16px;
-        border-radius: 60%;
-    }
+.dropdown-item {
+    padding: 10px 20px;
+}
 
-    .fixed-button:hover {
-        background-color: #0056b3;
-    }
+/* Styles for the popup */
+.popup {
+    position: fixed;
+    bottom: 0px;
+    right: 70px;
+    width: 500px;
+    height: 30%;
+    background-color: white;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    padding: 10px;
+    display: none;
+    z-index: 1000;
+    background-color: #222e3c;
+}
 
-    .dropdown-menu {
-        background-color: transparent; /* Make background transparent */
-        border: none; /* Remove border for cleaner look */
-        box-shadow: none; /* Remove shadow for complete transparency */
-    }
+/* Close button styles */
+.close-popup-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: transparent;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+}
 
-    .dropdown-item {
-        padding: 10px 20px;
-    }
-
-    /* Styles for the popup */
+@media (max-width: 768px) {
     .popup {
-        position: fixed;
-        bottom: 0px;
-        right: 70px;
-        width: 500px;
-        height: 30%;
-        background-color: white;
-        border: 1px solid #ddd;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        border-radius: 5px;
-        padding: 10px;
-        display: none; 
-        z-index: 1000;
+        width: 80%;
         background-color: #222e3c;
     }
 
-    /* Close button styles */
-    .close-popup-btn {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background-color: transparent;
-        border: none;
-        font-size: 16px;
-        cursor: pointer;
-    }
+}
 
-    @media (max-width: 768px) {
-        .popup {
-            width: 80%;
-            background-color: #222e3c;
-        }
+/* Sidebar Content Create Task */
 
+.mb-5 {
+    margin-bottom: 4rem !important;
+    /* This is equivalent to 80px */
+}
+
+#transparent-btn {
+    opacity: 0.7;
+}
+
+#sidebarRight,
+#sidebarRight2,
+#sidebarRight1 {
+    width: 50% !important;
+}
+
+/* Media query for mobile devices */
+@media (max-width: 768px) {
+
+    #sidebarRight,
+    #sidebarRight2,
+    #sidebarRight1 {
+        width: 100% !important;
     }
+}
+
+.button-wrapper {
+    position: sticky;
+    bottom: 0;
+    width: 100%;
+    padding: 10px;
+}
 </style>
 <div class="dropup">
     <button class="btn btn-secondary fixed-button" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false" >
         <i data-feather="plus"></i>
     </button>
-    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-        <li><a class="dropdown-item" id="openPopupBtn" href="#"><i class="align-middle me-2 fas fa-fw fa-brain"></i> Anton Thoughts</a></li>
+    <ul class="dropdown-menu" id="add-menu" aria-labelledby="dropdownMenuButton1">
+        <li><a class="dropdown-item" id="openPopupBtn"><i class="align-middle me-2 fas fa-fw fa-brain"></i> Anton Thoughts</a></li>
         <li><a class="dropdown-item" href="#"><i class="align-middle me-2 far fa-fw fa-file-pdf"></i> PDF</a></li>
         <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight"><i class="align-middle me-2 fas fa-fw fa-plus"></i> Add Task</a></li>
     </ul>
@@ -201,7 +243,6 @@
         <br>
     </div>
 </div>
-
 <script>
 const openPopupBtn = document.getElementById('openPopupBtn');
 const closePopupBtn = document.getElementById('closePopupBtn');
@@ -226,11 +267,14 @@ function typeWriterEffect(text, element, delay = 2) {
 
 // Function to open the popup and fetch AI analysis
 openPopupBtn.addEventListener('click', function() {
+    // Get the category ID from the hidden input field
+    const categoryId = document.getElementById('category-id').value;
+
     // Display loading text while fetching data
     aiAnalysisContent.textContent = 'Loading...';
 
     // Fetch the analysis from the server
-    fetch('/api/task-analysis/102/')
+    fetch(`/api/task-analysis/${categoryId}/`)
         .then(response => response.json())
         .then(data => {
             // Use the typeWriterEffect function to display the analysis content
@@ -257,9 +301,7 @@ window.addEventListener('click', function(event) {
         popup.style.display = 'none';
     }
 });
-
 </script>
-
 <div class="container-fluid p-0">
     <div class="card">
         <div class="card-header text-center bg-primary text-white">
@@ -288,29 +330,6 @@ window.addEventListener('click', function(event) {
         
     </div>
 </div>
-<style>
-    .mb-5 {
-        margin-bottom: 4rem !important; /* This is equivalent to 80px */
-    }
-    #transparent-btn {
-        opacity: 0.7;
-    }
-    #sidebarRight, #sidebarRight2, #sidebarRight1 {
-        width: 50% !important;
-    }
-    /* Media query for mobile devices */
-    @media (max-width: 768px) {
-        #sidebarRight, #sidebarRight2, #sidebarRight1 {
-            width: 100% !important;
-        }
-    }
-    .button-wrapper {
-        position: sticky;
-        bottom: 0;
-        width: 100%;
-        padding: 10px;
-    }
-</style>
 <!-- Sidebar Content Create Task -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarRight" aria-labelledby="sidebarLabel">
     <div class="offcanvas-header">
@@ -349,7 +368,6 @@ window.addEventListener('click', function(event) {
         </div>
     </div>
 </div>
-
 <!-- Sidebar Content task detail -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarRight1" aria-labelledby="sidebarLabel">
     <div class="offcanvas-header">
@@ -366,7 +384,6 @@ window.addEventListener('click', function(event) {
         </div>
     </div>
 </div>
-
 <script>
 // Function to get CSRF token
 function getCookie(name) {
@@ -483,6 +500,43 @@ function buildList(categoryId) {
             console.log('Error:', error);
         });
 }
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    const listWrapper = document.getElementById('list-wrapper');
+    
+    const sortable = new Sortable(listWrapper, {
+        animation: 150,
+        onEnd: function (evt) {
+            const items = evt.to.children;
+            const updatedTasks = [];
+            
+            for (let i = 0; i < items.length; i++) {
+                const itemId = items[i].id.split('-')[2]; // Assuming id format is data-row-{task.id}
+                updatedTasks.push({id: itemId, position: i});
+            }
+            
+            fetch('http://127.0.0.1:7000/api/update-task-positions/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify(updatedTasks)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Task positions updated successfully');
+                } else {
+                    console.error('Failed to update task positions');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    });
+});
 
 function truncateText(text, limit) {
     if (text.length > limit) {
@@ -848,7 +902,5 @@ function getRandomColor() {
     const colors = ['#f2d74e', '#f28c8c', '#4ef2a3', '#4e7af2', '#e74ef2'];
     return colors[Math.floor(Math.random() * colors.length)];
 }
-
 </script>
-
 {% endblock %}

@@ -257,3 +257,15 @@ def chatgpt_tester(request):
     poem = completion.choices[0].message.content
 
     return render(request, 'AI/chatgpt_tester.html', {'poem': poem})
+
+def invoice(request):
+    return render(request, 'capital/invoice.html')
+
+def error_404_page(request):
+    return render(request, 'errors/error_404_page.html')
+
+def error_500_page(request):
+    return render(request, 'errors/error_500_page.html')
+
+def notifications_list(request):
+    return render(request, 'authentication/notificatoins_list.html')

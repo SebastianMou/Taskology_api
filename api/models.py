@@ -71,11 +71,11 @@ class Task(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
 
     def __str__(self) -> str:
-        return f'{self.title} - {self.owner} - {self.created_at}'
+        return f'{self.title} - {self.owner} - {self.created_at} -- {self.position}'
 
     class Meta:
         verbose_name_plural = 'tasks'
-        ordering = ('-created_at',)
+        ordering = ('position', 'created_at')
 
 class SubTask(models.Model):
     # A reference to the parent task
@@ -94,3 +94,25 @@ class SubTask(models.Model):
     class Meta:
         verbose_name_plural = 'subtasks'
         ordering = ('created_at',)
+
+class Notifications(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    description = HTMLField(blank=True, null=True)
+    NOTIFICATION_TYPE_CHOICES = (
+        ('info', 'Information'),
+        ('warning', 'Warning'),
+        ('error', 'Error'),
+        ('success', 'Success'),
+    )
+    notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.title} - {self.user.username}"
+
+    class Meta:
+        verbose_name_plural = 'notifications'
+        ordering = ('-created_at',)

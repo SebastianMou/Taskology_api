@@ -21,6 +21,10 @@ urlpatterns = [
 
     path('delete_account/', views.delete_account, name='delete_account'),
     path('search/', views.search, name='search'),
+    path('invoice/', views.invoice, name='invoice'),
+    path('404/', views.error_404_page, name='error_404_page'),
+    path('500/', views.error_500_page, name='error_500_page'),
+    path('notifications_list/', views.notifications_list, name='notifications_list'),
 
     # activación de la cuenta de usuario por correo electrónico
     path('activate/<uidb64>/<token>', views.activate, name='activate'),
