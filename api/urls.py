@@ -28,9 +28,12 @@ urlpatterns = [
     path('notifications/', views.notifications, name='notifications'),
     path('notification-detail/<str:pk>/', views.notification_detail, name='notification-detail'),
     path('unread-notifications-count/', views.unread_notifications_count, name='unread-notifications-count'),
+    
+    path('user-interests-list/', views.user_interests_list, name='user-interests-list'),
 
     ## EVERYTHING AI
     path('task-analysis/<int:category_id>/', views.task_analysis, name='task-analysis'),
+    path('get-task-analyses/<int:category_id>/', views.get_task_analyses, name='get-task-analyses'),
     ## SORTABLEJS
     path('update-task-positions/', views.update_task_positions, name='update-task-positions'),
 ] 

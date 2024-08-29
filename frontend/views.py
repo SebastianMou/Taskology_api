@@ -23,6 +23,9 @@ openai.api_key = settings.OPENAI_API_KEY
 def index(request):
     return render(request, 'index.html')
 
+def hero(request):
+    return render(request, 'hero.html')
+
 def signup(request):
     if request.user.is_authenticated:
         return redirect('/')
@@ -150,6 +153,10 @@ def interests(request):
         form = ProfileForm(instance=request.user.profile)
     
     return render(request, 'authentication/interests.html', {'form': form})
+
+def profile(request):
+    
+    return render(request, 'authentication/profile.html')
 
 def logout_view(request):
     logout(request)

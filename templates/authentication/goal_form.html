@@ -39,24 +39,24 @@
                                 <center><h2>Current Situation</h2></center>
                                 <div class="mb-3">
                                     <label for="id_current_working_on" class="form-label">
-                                        What are you currently working on or striving towards? 
-                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="Describe your current projects or goals."></i>
+                                        Why did you choose Anton? What do you hope to achieve?
+                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="I chose Anton because I want a tool that can help me stay focused and organized."></i>
                                     </label>
-                                    <textarea class="form-control" id="id_current_working_on" name="current_working_on" rows="4">{{ form.current_working_on.value }}</textarea>
+                                    <textarea class="form-control" id="id_current_working_on" name="current_working_on" rows="4">{{ form.current_working_on.value|default:'' }}</textarea>
                                 </div>
                                 <div class="mb-3">
                                     <label for="id_progress_towards_goals" class="form-label">
-                                        How do you feel about your progress towards your goals right now?
-                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="Share your feelings about your progress."></i>
+                                        How would you describe yourself in a few words?
+                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="I am a driven professional who values continuous learning and personal growth."></i>
                                     </label>
-                                    <textarea class="form-control" id="id_progress_towards_goals" name="progress_towards_goals" rows="4">{{ form.progress_towards_goals.value }}</textarea>
+                                    <textarea class="form-control" id="id_progress_towards_goals" name="progress_towards_goals" rows="4">{{ form.progress_towards_goals.value|default:'' }}</textarea>
                                 </div>
                                 <div class="mb-3">
                                     <label for="id_challenges" class="form-label">
-                                        What challenges are you facing that might be hindering your progress?
-                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="Identify any obstacles you are encountering."></i>
+                                        What personal or professional challenges are you currently facing?
+                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="I struggle with procrastination and often find it hard to stick to my goals."></i>
                                     </label>
-                                    <textarea class="form-control" id="id_challenges" name="challenges" rows="4">{{ form.challenges.value }}</textarea>
+                                    <textarea class="form-control" id="id_challenges" name="challenges" rows="4">{{ form.challenges.value|default:'' }}</textarea>
                                 </div>
                             </div>
                         </div>
@@ -67,71 +67,31 @@
                                 <center><h2>Desired Outcomes</h2></center>
                                 <div class="mb-3">
                                     <label for="id_one_year_goal" class="form-label">
-                                        Where do you see yourself in one year? Five years?
-                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="Outline your short-term and long-term goals."></i>
+                                        What are your top three personal development goals?
+                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="I want to improve my time management, develop a positive mindset, and learn a new skill."></i>
                                     </label>
-                                    <textarea class="form-control" id="id_one_year_goal" name="one_year_goal" rows="4">{{ form.one_year_goal.value }}</textarea>
+                                    <textarea class="form-control" id="id_one_year_goal" name="one_year_goal" rows="4">{{ form.one_year_goal.value|default:'' }}</textarea>
                                 </div>
                                 <div class="mb-3">
                                     <label for="id_five_year_goal" class="form-label">
-                                        What specific achievements would make you feel successful?
-                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="Specify the milestones that signify success for you."></i>
+                                        How do you prefer to receive feedback or support?
+                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="I prefer receiving constructive feedback through actionable suggestions and positive reinforcement."></i>
                                     </label>
-                                    <textarea class="form-control" id="id_five_year_goal" name="five_year_goal" rows="4">{{ form.five_year_goal.value }}</textarea>
+                                    <textarea class="form-control" id="id_five_year_goal" name="five_year_goal" rows="4">{{ form.five_year_goal.value|default:'' }}</textarea>
                                 </div>
                                 <div class="mb-3">
                                     <label for="id_achievements_feel_successful" class="form-label">
-                                        How would achieving your goals impact your life or others around you?
-                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="Explain the broader impact of achieving your goals."></i>
+                                        What areas do you feel you need the most improvement in?
+                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="I need to work on my confidence and being more assertive in social situations."></i>
                                     </label>
-                                    <textarea class="form-control" id="id_achievements_feel_successful" name="achievements_feel_successful" rows="4">{{ form.achievements_feel_successful.value }}</textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="carousel-item">
-                        <div class="card">
-                            <div class="card-body">
-                                <center><h2>Motivation and Values</h2></center>
-                                <div class="mb-3">
-                                    <label for="id_motivation" class="form-label">
-                                        What motivates you the most in pursuing your goals?
-                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="Discuss your sources of motivation."></i>
-                                    </label>
-                                    <textarea class="form-control" id="id_motivation" name="motivation" rows="4">{{ form.motivation.value }}</textarea>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="id_values_principles" class="form-label">
-                                        What values or principles guide your decisions in life?
-                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="Highlight the values that influence your decisions."></i>
-                                    </label>
-                                    <textarea class="form-control" id="id_values_principles" name="values_principles" rows="4">{{ form.values_principles.value }}</textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="carousel-item">
-                        <div class="card">
-                            <div class="card-body">
-                                <center><h2>Resources and Support</h2></center>
-                                <div class="mb-3">
-                                    <label for="id_resources_support" class="form-label">
-                                        What resources or support do you currently have that can help you achieve your goals?
-                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="Identify the resources or support systems you have."></i>
-                                    </label>
-                                    <textarea class="form-control" id="id_resources_support" name="resources_support" rows="4">{{ form.resources_support.value }}</textarea>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="id_skills_needed" class="form-label">
-                                        Are there any skills or knowledge you need to acquire to reach your goals?
-                                        <i class="align-middle me-2 fas fa-fw fa-question-circle" data-popover="List any skills or knowledge gaps you need to address."></i>
-                                    </label>
-                                    <textarea class="form-control" id="id_skills_needed" name="skills_needed" rows="4">{{ form.skills_needed.value }}</textarea>
+                                    <textarea class="form-control" id="id_achievements_feel_successful" name="achievements_feel_successful" rows="4">{{ form.achievements_feel_successful.value|default:'' }}</textarea>
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-primary">Submit</button>
                         </div>
                     </div>
+
+                    
             </form>
                 
             </div>

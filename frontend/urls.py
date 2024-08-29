@@ -6,6 +6,7 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('hero/', views.hero, name='hero'),
     path('signup/', views.signup, name='signup'),
     path('login/', views.user_login, name='login'),
     path('logout/', views.logout_view, name='logout'),
@@ -25,6 +26,7 @@ urlpatterns = [
     path('404/', views.error_404_page, name='error_404_page'),
     path('500/', views.error_500_page, name='error_500_page'),
     path('notifications_list/', views.notifications_list, name='notifications_list'),
+    path('profile/', views.profile, name='profile'),
 
     # activación de la cuenta de usuario por correo electrónico
     path('activate/<uidb64>/<token>', views.activate, name='activate'),

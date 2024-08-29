@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from tinymce.models import HTMLField
+from django.utils import timezone
 
 # Create your models here.
 class Goal(models.Model):
@@ -14,13 +15,6 @@ class Goal(models.Model):
     five_year_goal = models.TextField(blank=True)
     achievements_feel_successful = models.TextField(blank=True)
 
-    # Motivation and Values
-    motivation = models.TextField(blank=True)
-    values_principles = models.TextField(blank=True)
-
-    # Resources and Support
-    resources_support = models.TextField(blank=True)
-    skills_needed = models.TextField(blank=True)
 
     def __str__(self):
         # Find the profile that has this goal
@@ -34,16 +28,16 @@ class Interest(models.Model):
 
     def __str__(self):
         return self.name
-    
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone_number = models.CharField(max_length=15, blank=True)
-    interests = models.ManyToManyField(Interest, blank=True)
-    goal = models.OneToOneField(Goal, blank=True, null=True, on_delete=models.SET_NULL)
+    interests = models.ManyToManyField(Interest, blank=True)  # No change needed here
+    goal = models.OneToOneField('Goal', blank=True, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.user.username
-        
+
 class TaskCategory(models.Model):
     name = models.CharField(max_length=100, null=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='task_categories', null=True)
@@ -68,6 +62,7 @@ class Task(models.Model):
     due_date = models.DateField('due date', null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     position = models.PositiveIntegerField(default=0, blank=False, null=False)
+    difficulty = models.PositiveIntegerField(default=0, blank=False, null=False)  # New field for difficulty
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
 
     def __str__(self) -> str:
@@ -75,7 +70,7 @@ class Task(models.Model):
 
     class Meta:
         verbose_name_plural = 'tasks'
-        ordering = ('position', 'created_at')
+        ordering = ('difficulty', 'position', 'created_at')
 
 class SubTask(models.Model):
     # A reference to the parent task
@@ -116,3 +111,12 @@ class Notifications(models.Model):
     class Meta:
         verbose_name_plural = 'notifications'
         ordering = ('-created_at',)
+
+class TaskAnalysis(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    analysis = models.TextField()
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"Analysis for {self.task.title}"

@@ -14,8 +14,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .serializer import TaskCategorySerializer, TaskSerializer, SubTaskSerializer, ProfileSerializer, NotificationsSerializer
-from .models import TaskCategory, Task, SubTask, Profile, Notifications
+from .serializer import TaskCategorySerializer, TaskSerializer, SubTaskSerializer, ProfileSerializer, NotificationsSerializer, UserInterest  
+from .models import TaskCategory, Task, SubTask, Profile, Notifications, Interest, TaskAnalysis
 import openai
 
 openai.api_key = settings.OPENAI_API_KEY  # Replace with your actual OpenAI API key
@@ -43,8 +43,11 @@ def apiOverview(request):
         'Update Profile': '/update-profile/',
         ## Notifications
         'Notification': '/notifications/',
-        ## Analysis
+        ## AI get_task_analyses
         'Analysis': '/task-analysis/<int:category_id>/',
+        'Get Task Analyses': '/get-task-analyses/<int:category_id>/',
+        ## User Interests List
+        'User Interests List': '/user-interests-list/',
     }
     return Response(api_urls)
 
@@ -98,14 +101,22 @@ def task_project_delete(request, pk):
 ## MAIN TASK C.R.U.D 
 @api_view(['GET'])
 def task_list(request, category_id):
+    # Get the category object to include in the response
     category = TaskCategory.objects.get(id=category_id, owner=request.user)
+    
+    # Fetch tasks for the category, initially ordered by 'position'
     tasks = Task.objects.filter(owner=request.user, category=category_id).order_by('position')
+    
+    # Serialize the tasks and category data
     serializer = TaskSerializer(tasks, many=True)
     category_serializer = TaskCategorySerializer(category)
+    
+    # Return the sorted tasks along with the category data
     return Response({
         'tasks': serializer.data,
         'category': category_serializer.data
     })
+
 
 @api_view(['GET'])
 def task_detail(request, pk):
@@ -239,11 +250,10 @@ def unread_notifications_count(request):
 
 
 ## EVERYTHING AI
-def analyze_task_difficulty(tasks):
-    # Prepare a list of tasks to analyze
-    task_descriptions = "\n".join(
+def analyze_task_difficulty(task):
+    # Prepare the task description for analysis
+    task_description = (
         f"Task: {task['title']}\nDescription: {task.get('description', 'No description')}\nDue Date: {task.get('due_date', 'No due date')}\n"
-        for task in tasks
     )
 
     # Define messages for the chat-based model
@@ -252,19 +262,14 @@ def analyze_task_difficulty(tasks):
             "role": "system",
             "content": (
                 "You are a Productivity Assistant that helps users prioritize and complete their tasks efficiently. "
-                "Consider the following criteria when recommending task order: "
-                "1. Urgency: Tasks with closer deadlines should be prioritized. "
-                "2. Importance: Identify tasks that have significant impact or value. "
-                "3. Complexity: Balance complex tasks with easier ones to maintain motivation. "
-                "4. Energy Levels: Recommend tasks based on the user's energy and focus patterns. "
-                "5. Dependencies: Ensure prerequisite tasks are completed first."
+                "Your goal is to help users complete as many tasks as quickly as possible. If a task cannot realistically be completed within a day, suggest rescheduling it, and estimate how long a user will take to complete. "
+                "Avoid using HTML or any special formatting. Provide plain text output with clear summaries."
             )
         },
         {
             "role": "user",
             "content": (
-                f"Analyze the following tasks and suggest the order in which they should be completed. "
-                f"Provide a **short summary** for each task in the suggested order:\n\n{task_descriptions}"
+                f"Analyze the following task and suggest if it can be completed within a day, and if not, suggest a new due date:\n\n{task_description}"
             )
         }
     ]
@@ -274,25 +279,90 @@ def analyze_task_difficulty(tasks):
         model="gpt-3.5-turbo",  # or "gpt-4" if you have access
         messages=messages,
         max_tokens=250,
-        temperature=0.5
+        temperature=0.1
     )
 
     # Extract the response text correctly
-    print(task_descriptions)
-    print(response.choices[0].message.content.strip())
     analysis = response.choices[0].message.content.strip()
     return analysis
+
+def parse_difficulty_from_analysis(analysis):
+    """
+    Parse the difficulty score from the AI's analysis text.
+    Adjust this function to better understand a range of AI outputs.
+    """
+    if "cannot realistically be completed within a day" in analysis:
+        return 10  # Most difficult task
+    elif "1-2 weeks" in analysis or "several days" in analysis:
+        return 7
+    elif "within a day" in analysis or "quick and essential" in analysis:
+        return 1  # Easiest task
+    elif "approximately 134 days" in analysis or "1-2 months" in analysis:
+        return 9
+    # Add more parsing rules based on your AI output patterns
+    # Return a default value if no conditions match
+    return 5
 
 @login_required
 def task_analysis(request, category_id):
     # Fetch tasks for the category
     tasks = Task.objects.filter(category_id=category_id, owner=request.user)
-    task_list = tasks.values('title', 'description', 'due_date')
+    task_list = tasks.values('id', 'title', 'description', 'due_date')
 
-    # Analyze task difficulty using OpenAI
-    analysis = analyze_task_difficulty(task_list)
+    # Variable to hold analysis data and tasks for sorting
+    analysis_data = []
+    tasks_with_difficulty = []
 
-    return JsonResponse({'analysis': analysis})
+    for task in task_list:
+        # Analyze task difficulty using OpenAI
+        analysis = analyze_task_difficulty(task)
+
+        # Parse difficulty score from AI analysis
+        difficulty_score = parse_difficulty_from_analysis(analysis)
+
+        # Get the task object and update difficulty
+        task_obj = Task.objects.get(id=task['id'])
+        task_obj.difficulty = difficulty_score
+        task_obj.save()
+
+        # Collect tasks to sort by difficulty
+        tasks_with_difficulty.append(task_obj)
+
+        # Save analysis for the specific task
+        TaskAnalysis.objects.create(
+            user=request.user,
+            task_id=task['id'],
+            analysis=analysis
+        )
+
+        # Append analysis to the data list for returning as JSON
+        analysis_data.append({
+            'task_id': task['id'],
+            'analysis': analysis
+        })
+
+    # Sort tasks based on difficulty after updating all difficulties
+    tasks_with_difficulty.sort(key=lambda x: x.difficulty)
+
+    # Update positions based on sorted difficulty
+    for index, task in enumerate(tasks_with_difficulty):
+        task.position = index  # Set position based on sorted order
+        task.save()
+
+    # Return the JSON response with all task analyses
+    return JsonResponse({'analyses': analysis_data, 'status': 'Analysis completed'})
+
+
+@login_required
+def get_task_analyses(request, category_id):
+    # Fetch all existing analyses for the given category and user
+    analyses = TaskAnalysis.objects.filter(task__category_id=category_id, user=request.user).values('task_id', 'analysis')
+
+    # Convert QuerySet to a list of dictionaries
+    analysis_data = list(analyses)
+
+    # Return the existing analyses as a JSON response
+    return JsonResponse({'analyses': analysis_data, 'status': 'Analysis retrieved successfully'})
 
 ## SORTABLEJS - (https://sortablejs.github.io/Sortable/)
 @csrf_exempt
@@ -308,3 +378,29 @@ def update_task_positions(request):
     return Response({'success': True}, status=status.HTTP_200_OK)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_interests_list(request):
+    """
+    Retrieve a list of interests and user details for the authenticated user.
+    """
+    try:
+        user_profile = Profile.objects.get(user=request.user)
+        interests = user_profile.interests.all()  # Fetch interests through profile
+    except Profile.DoesNotExist:
+        interests = Interest.objects.none()  # Return empty if no profile found
+
+    # Fetch user details
+    user_details = {
+        'username': request.user.username,
+        'first_name': request.user.first_name,
+        'last_name': request.user.last_name
+    }
+
+    # Serialize interests
+    serializer = UserInterest(interests, many=True)
+    response_data = {
+        'user': user_details,
+        'interests': serializer.data
+    }
+    return Response(response_data)

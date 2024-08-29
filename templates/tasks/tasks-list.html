@@ -230,55 +230,93 @@ textarea#description {
     </button>
     <ul class="dropdown-menu" id="add-menu" aria-labelledby="dropdownMenuButton1">
         <li><a class="dropdown-item" id="openPopupBtn"><i class="align-middle me-2 fas fa-fw fa-brain"></i> Anton Thoughts</a></li>
+        <li><a class="dropdown-item" id="fetch-data-button" data-category-id="{{ category.id }}" href="#" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight2" aria-controls="sidebarRight2"><i class="align-middle me-2 far fa-fw fa-clipboard"></i> Anton's History</a></li>
         <li><a class="dropdown-item" href="#"><i class="align-middle me-2 far fa-fw fa-file-pdf"></i> PDF</a></li>
         <li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight"><i class="align-middle me-2 fas fa-fw fa-plus"></i> Add Task</a></li>
     </ul>
 </div>
 
-<div class="popup" id="popup">
-    <button class="close-popup-btn" id="closePopupBtn">&times;</button>
-    <h4 style="color: white;">Anton Thoughts</h4>
-    <div class="overflow-auto" style="height: 100%;">
-        <p id="aiAnalysisContent">This is a simple popup at the bottom right of the page.</p>
-        <br>
-    </div>
-</div>
-<script>
-const openPopupBtn = document.getElementById('openPopupBtn');
-const closePopupBtn = document.getElementById('closePopupBtn');
-const popup = document.getElementById('popup');
-const aiAnalysisContent = document.getElementById('aiAnalysisContent');
+<!-- Spinner for loading screen -->
+<div class="spinner" id="loadingSpinner" style="display: none;"></div>
 
-// Function to type out the text letter by letter
-function typeWriterEffect(text, element, delay = 2) {
-    element.innerHTML = '';  // Clear existing content
-    let index = 0;
-
-    function type() {
-        if (index < text.length) {
-            element.innerHTML += text.charAt(index);
-            index++;
-            setTimeout(type, delay);
-        }
+<style>
+    .spinner {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 22.4px;
+        height: 22.4px;
     }
 
-    type();
-}
+    .spinner::before,
+    .spinner::after {
+        --radius: 250;
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        animation: spinner-w7nm60 2.4s infinite linear;
+        background: #3b7ddd;
+        border-radius: 50%;
+    }
+
+    .spinner::before {
+        --radius: -250;
+        background: #8947aa;
+    }
+
+    @keyframes spinner-w7nm60 {
+        0% {
+            transform: scale(1) rotate(0deg) translateY(calc(var(--radius) * 1%));
+        }
+        50% {
+            transform: scale(0.5) rotate(1440deg) translateY(0);
+        }
+        100% {
+            transform: scale(1) rotate(2920deg) translateY(calc(var(--radius) * 1%));
+        }
+    }
+</style>
+
+<script>
+const openPopupBtn = document.getElementById('openPopupBtn');
+const popup = document.getElementById('popup');
 
 // Function to open the popup and fetch AI analysis
 openPopupBtn.addEventListener('click', function() {
     // Get the category ID from the hidden input field
     const categoryId = document.getElementById('category-id').value;
 
-    // Display loading text while fetching data
-    aiAnalysisContent.textContent = 'Loading...';
+    console.log('Fetching analysis for category ID:', categoryId); // Debugging line
+
 
     // Fetch the analysis from the server
     fetch(`/api/task-analysis/${categoryId}/`)
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response status:', response.status); // Debugging line
+            return response.json();
+        })
         .then(data => {
-            // Use the typeWriterEffect function to display the analysis content
-            typeWriterEffect(data.analysis, aiAnalysisContent);
+            console.log('Data received:', data); // Debugging line
+
+            // Clear any existing content
+            aiAnalysisContent.innerHTML = '';
+
+            if (data.analyses && data.analyses.length > 0) {
+                // Loop through each analysis and display it
+                data.analyses.forEach((analysisItem, index) => {
+                    // Create a paragraph element for each analysis
+                    const paragraph = document.createElement('p');
+                    paragraph.textContent = `${index + 1}. ${analysisItem.analysis}`;
+                    aiAnalysisContent.appendChild(paragraph);
+
+                    // Optionally, use typeWriterEffect for each paragraph
+                    // typeWriterEffect(`${index + 1}. ${analysisItem.analysis}`, paragraph);
+                });
+            } else {
+                aiAnalysisContent.textContent = 'No analysis found. Please try again later.';
+            }
 
             // Open the popup
             popup.style.display = 'block';
@@ -290,17 +328,6 @@ openPopupBtn.addEventListener('click', function() {
         });
 });
 
-// Function to close the popup
-closePopupBtn.addEventListener('click', function() {
-    popup.style.display = 'none';
-});
-
-// Close the popup when clicking outside of it
-window.addEventListener('click', function(event) {
-    if (event.target === popup) {
-        popup.style.display = 'none';
-    }
-});
 </script>
 <div class="container-fluid p-0">
     <div class="card">
@@ -323,11 +350,10 @@ window.addEventListener('click', function(event) {
         
         <div class="card-body">
             <div id="list-wrapper">
-                <!-- these are all the tasks -->
+                <!-- These are all the tasks -->
             </div>
             <button class="btn btn-primary bottom_add_button" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight"><i data-feather="plus"></i> New Task</button>
         </div>
-        
     </div>
 </div>
 <!-- Sidebar Content Create Task -->
@@ -384,6 +410,26 @@ window.addEventListener('click', function(event) {
         </div>
     </div>
 </div>
+
+<!-- Sidebar Content anton data -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarRight2" aria-labelledby="sidebarLabel">
+    <div class="offcanvas-header">
+        <h5 id="sidebarLabel"><i class="align-middle me-2 far fa-fw fa-clipboard"></i> Anton's history</h5>
+        <a type="button" class="text-reset" data-bs-dismiss="offcanvas" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="currentColor" class="bi bi-caret-right" viewBox="0 0 16 16">
+                <path d="M6 12.796V3.204L11.481 8zm.659.753 5.48-4.796a1 1 0 0 0 0-1.506L6.66 2.451C6.011 1.885 5 2.345 5 3.204v9.592a1 1 0 0 0 1.659.753"/>
+            </svg>
+        </a>
+    </div>
+    <div class="offcanvas-body">
+        <div class="container-fluid full-height" id="anton-task-detail-container">
+            <!-- Anton AI data will be inserted here dynamically -->
+        </div>
+    </div>
+</div>
+
+
+ 
 <script>
 // Function to get CSRF token
 function getCookie(name) {
@@ -501,20 +547,120 @@ function buildList(categoryId) {
         });
 }
 
+// #####################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 document.addEventListener('DOMContentLoaded', (event) => {
     const listWrapper = document.getElementById('list-wrapper');
-    
+    const categoryId = document.getElementById('category-id').value; // Get category ID dynamically
+    const fetchButton = document.getElementById('fetch-data-button');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+
+    // Show the loading spinner
+    function showLoadingSpinner() {
+        loadingSpinner.style.display = 'block';
+    }
+
+    // Hide the loading spinner
+    function hideLoadingSpinner() {
+        loadingSpinner.style.display = 'none';
+    }
+
+    // Function to fetch and render tasks
+    function fetchAndRenderTasks() {
+        fetch(`/api/task-list/${categoryId}/`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Fetched data:', data);
+
+                // Clear the current task list
+                listWrapper.innerHTML = '';
+
+                // Sort tasks by their position to maintain server order
+                data.tasks.sort((a, b) => a.position - b.position);
+
+                // Display sorted tasks by position
+                data.tasks.forEach(task => {
+                    const item = `
+                        <ul class="list-group" id="data-row-${task.id}" data-difficulty="${task.difficulty}">
+                            <li class="list-group-item d-flex justify-content-between align-items-center underline-border">
+                                <div class="d-flex align-items-center">
+                                    <input type="checkbox" class="me-4 checkmark confetti-checkbox" id="confettiCheckbox${task.id}" ${task.completed ? 'checked' : ''}>
+                                    <span class="me-2 edit" data-task-id="${task.id}" data-task-title="${task.title}" data-task-completion-date="${task.completion_date}" data-task-completion-time="${task.completion_time}" data-task-description="${task.description}" data-task-completed="${task.completed}" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight">${task.title}</span>
+                                    <span class="ms-4 mobile-hide">${task.completion_date || 'N/A'}</span>
+                                    <span class="ms-4 mobile-hide">${task.completion_time || 'N/A'}</span>
+                                    <span class="ms-4 mobile-hide">${task.updated_at}</span>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-link" type="button" id="dropdownMenuButton${task.id}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="align-middle" data-feather="more-horizontal"></i>
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton${task.id}">
+                                        <li>
+                                            <button class="dropdown-item edit" data-task-id="${task.id}" data-task-title="${task.title}" data-task-completion-date="${task.completion_date}" data-task-completion-time="${task.completion_time}" data-task-description="${task.description}" data-task-completed="${task.completed}" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight" aria-controls="sidebarRight">
+                                                <i class="align-middle me-2" data-feather="edit"></i> Edit
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item delete" data-task-id="${task.id}">
+                                                <i class="align-middle me-2" data-feather="delete"></i> Delete
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button class="dropdown-item task-title" data-task-id="${task.id}" data-bs-toggle="offcanvas" data-bs-target="#sidebarRight1" aria-controls="sidebarRight1">
+                                                <i class="align-middle me-2" data-feather="book-open"></i> Read
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </li>
+                        </ul>
+                    `;
+                    listWrapper.innerHTML += item;
+                });
+
+                // Reinitialize feather icons and any other dynamic elements
+                feather.replace();
+            })
+            .catch(error => console.error('Error fetching task list:', error));
+    }
+
+    // Fetch and render tasks initially
+    fetchAndRenderTasks();
+
+    // Initialize SortableJS for drag-and-drop functionality
     const sortable = new Sortable(listWrapper, {
         animation: 150,
         onEnd: function (evt) {
             const items = evt.to.children;
             const updatedTasks = [];
-            
+
+            // Update task positions based on the new order after drag-and-drop
             for (let i = 0; i < items.length; i++) {
                 const itemId = items[i].id.split('-')[2]; // Assuming id format is data-row-{task.id}
                 updatedTasks.push({id: itemId, position: i});
             }
-            
+
+            // Save the updated order back to the server
             fetch('http://127.0.0.1:7000/api/update-task-positions/', {
                 method: 'POST',
                 headers: {
@@ -527,6 +673,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
             .then(data => {
                 if (data.success) {
                     console.log('Task positions updated successfully');
+                    fetchAndRenderTasks();  // Refresh task list after successfully updating task positions
                 } else {
                     console.error('Failed to update task positions');
                 }
@@ -536,7 +683,72 @@ document.addEventListener('DOMContentLoaded', (event) => {
             });
         }
     });
+
+    // Function to fetch and display AI analysis
+    function fetchAndDisplayTaskAnalyses(categoryId) {
+        const url = `http://127.0.0.1:7000/api/get-task-analyses/${categoryId}/`;
+
+        showLoadingSpinner(); // Show spinner before fetching
+
+        fetch(url)
+            .then(resp => resp.json())
+            .then(function(data) {
+                console.log('Data received from AH API:', data);
+                const container = document.getElementById('anton-task-detail-container');
+                if (!container) {
+                    console.error('anton-task-detail-container not found!');
+                    return;
+                }
+
+                container.innerHTML = ''; // Clear existing content
+
+                data.analyses.forEach((analysisItem, index) => {
+                    const item = `
+                        <div id="data-row-${index}" class='an-wrapper flex-wrapper'>
+                            <p>${analysisItem.analysis}</p>
+                        </div>
+                    `;
+                    container.innerHTML += item;
+                });
+
+                hideLoadingSpinner(); // Hide spinner after fetching
+            })
+            .catch(error => {
+                console.error('Error fetching task analyses:', error);
+                hideLoadingSpinner(); // Hide spinner if an error occurs
+            });
+    }
+
+    // Event listener for "Anton Thoughts" button
+    fetchButton.addEventListener('click', function() {
+        const categoryId = document.getElementById('category-id').value;
+        fetchAndDisplayTaskAnalyses(categoryId);
+    });
+
+    // Event listener to detect when offcanvas is shown and fetch data
+    document.getElementById('sidebarRight2').addEventListener('shown.bs.offcanvas', function () {
+        const button = document.querySelector('[data-bs-target="#sidebarRight2"]');
+        if (button) {
+            const categoryId = button.getAttribute('data-category-id');  // Get the category ID from the button's data attribute
+            fetchAndDisplayTaskAnalyses(categoryId);  // Fetch and display JSON data using the dynamic category ID
+        }
+    });
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ####################################################################
 
 function truncateText(text, limit) {
     if (text.length > limit) {
@@ -598,7 +810,6 @@ function attachEventListeners() {
         });
     });
 }
-
 
 function playPopSound() {
     var audio = document.getElementById('pop-sound');
@@ -763,7 +974,7 @@ function editItem(taskId, taskTitle, taskCompletionDate, taskCompletionTime, tas
     tinymce.get('description').setContent(taskDescription);
 }
 
-// Delete tasks
+// Delete a task
 function deleteItem(taskId) {
     console.log('Delete clicked for task:', taskId);
     var url = `http://127.0.0.1:7000/api/task-delete/${taskId}/`;
@@ -798,6 +1009,7 @@ function deleteItem(taskId) {
     });
 }
 
+// Delete tasks in the category
 function deleteAllTasksInCategory(categoryId) {
     console.log('Delete all tasks clicked for category:', categoryId);
     var url = `http://127.0.0.1:7000/api/delete-all-tasks-in-category/${categoryId}/`;
